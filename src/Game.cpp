@@ -23,7 +23,7 @@ using json = nlohmann::json;
 
 #define MAX_BULLETS		1000
 #define MAX_ENEMY		500
-#define MAX_STAR		50
+#define MAX_STAR		100
 #define MAX_LENGHT_NAME 6
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
@@ -101,20 +101,19 @@ const RuntimeVals default_stat;
 #define screenWidth		 800
 #define screenHeight	 1000
 
-const int	fps = 30;
-std::string text;
-Texture		spaceship_sprite;
-Texture		Enemyship_sprite;
-Texture		Upgrade_bullet;
-Texture		Upgrade_speed;
-Texture		Upgrade_pacman;
-Texture		Background;
-Texture		RStar;
-Texture		BStar;
-Texture		YStar;
-Font		Consolas;
-double		loopTime;
-int			exitCount = 0;
+const int fps = 30;
+Texture	  spaceship_sprite;
+Texture	  Enemyship_sprite;
+Texture	  Upgrade_bullet;
+Texture	  Upgrade_speed;
+Texture	  Upgrade_pacman;
+Texture	  Background;
+Texture	  RStar;
+Texture	  BStar;
+Texture	  YStar;
+Font	  Consolas;
+double	  loopTime;
+int		  exitCount = 0;
 
 /**
  * On Wsl for some reasons there are random keys queued on the middle of the execution, prevent them from closing the game immediatly
@@ -246,7 +245,7 @@ void gameLoop() {
 	// --------------------------------------------------------------------------------- Check Keyboard
 	// fire bullets when spacebar pressed
 	if (IsKeyDown(KEY_SPACE)) {
-		Runtime.spaceship_speed -= 3;
+		Runtime.spaceship_speed /= 2;
 		if (Runtime.fireCoolDown < 0) {
 			Runtime.fireCoolDown = default_stat.fireCoolDown;
 			fireBullets();
@@ -323,8 +322,11 @@ void gameLoop() {
 	renderBullets();
 
 	// Draw spaceship stats on the screen
-	text = "Bullets: " + std::to_string(Runtime.spaceship_num_bullets) + " Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed)) + " Health: " + std::to_string(Runtime.spaceship_health) + " Score: " + std::to_string(Runtime.score);
-	DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, WHITE);
+	std::string text = "Bullets: " + std::to_string(Runtime.spaceship_num_bullets);
+	text += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
+	text += "\n Health: " + std::to_string(Runtime.spaceship_health);
+	text += "\n Score: " + std::to_string(Runtime.score);
+	DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
 
 	EndDrawing();
 	//---------------------------------------------------------------------------------- End draw
@@ -883,7 +885,7 @@ void randomStar(int index) {
 	float speed = static_cast<float>(rand() % 3) + 1.f;
 
 	// 0 or 1 or 2
-	char type = static_cast<char>(rand() % 3);
+	float type = static_cast<float>(rand() % 3);
 
 	stars[index] = {x, y, speed, type};
 }
@@ -893,9 +895,9 @@ void randomStar(int index) {
  */
 void renderStars() {
 
-	Color tint = {255, 255, 255, 175};
-
 	FOR(MAX_STAR) {
+		unsigned char light = static_cast<unsigned char>(stars[i].z * 50);
+		Color		  tint	= {255, 255, 255, light};
 		switch (static_cast<int>(stars[i].w)) {
 		case 0:
 			DrawTexture(RStar, stars[i].x, stars[i].y, tint);
