@@ -23,11 +23,14 @@ using json = nlohmann::json;
 
 #define MAX_BULLETS		1000
 #define MAX_ENEMY		500
+#define MAX_STAR		50
 #define MAX_LENGHT_NAME 6
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
 #define DefaultShip \
 	{ -40, -40, 0, 0 }
+#define DefaultStar \
+	{ -1, -1, -1, -1 }
 
 // drawing loops
 void gameLoop();
@@ -50,16 +53,25 @@ void	fireBullets();
 void	pacmanEffect(Texture sprite);
 Vector2 intersection(Vector4 line1, Vector4 line2);
 void	save();
+void	fillStars();
+void	randomStar(int index);
+void	renderStars();
+void	moveStars();
 
 // The fist two values represent the coordinates, the latter two the accelleration
 Vector4 bullets[MAX_BULLETS];
 Vector4 e_bullets[MAX_BULLETS];
 
-// bad implementation ahead
 // The coordinates of all the enemies
 Rectangle enemies[MAX_ENEMY];
-char	  e_coolDown[MAX_ENEMY];
-int		  e_health[MAX_ENEMY];
+
+// other enemies stats
+char e_coolDown[MAX_ENEMY];
+int	 e_health[MAX_ENEMY];
+
+// x, y, z, 	w
+// x, y, speed, type
+Vector4 stars[MAX_STAR];
 
 // Runtime values that are gonna change
 struct RuntimeVals {
@@ -97,6 +109,9 @@ Texture		Upgrade_bullet;
 Texture		Upgrade_speed;
 Texture		Upgrade_pacman;
 Texture		Background;
+Texture		RStar;
+Texture		BStar;
+Texture		YStar;
 Font		Consolas;
 double		loopTime;
 int			exitCount = 0;
@@ -127,9 +142,14 @@ int main(void) {
 	Upgrade_speed	 = LoadTexture("./res/upgrade_speed.png");
 	Upgrade_pacman	 = LoadTexture("./res/upgrade_pacman.png");
 	Background		 = LoadTexture("./res/background.png");
+	RStar			 = LoadTexture("./res/star_red.png");
+	BStar			 = LoadTexture("./res/star_blue.png");
+	YStar			 = LoadTexture("./res/star_yellow.png");
 	Consolas		 = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
 	HideCursor();
 	// Loading textures
+
+	fillStars();
 
 	resetArrays();
 
@@ -274,7 +294,9 @@ void gameLoop() {
 	BeginDrawing();
 
 	// draw screen
-	DrawTexture(Background, 0, 0, WHITE);
+	ClearBackground({0, 0, 40, 255});
+
+	renderStars();
 
 	pacmanEffect(spaceship_sprite);
 
@@ -669,6 +691,8 @@ void physics() {
 
 	moveEnemies();
 
+	moveStars();
+
 	// -------------------------------------------------------------------------------------------------------------- Collisions
 	checkBulletsCollision();
 
@@ -837,4 +861,70 @@ void save() {
 	std::ofstream oHiScores("./res/HiScores.json");
 
 	oHiScores << std::setfill('\t') << std::setw(1) << j << std::endl;
+}
+
+/**
+ * fill the stars array with random stars in random positions at random speed
+ */
+void fillStars() {
+	FOR(MAX_STAR) {
+		randomStar(i);
+	}
+}
+
+/**
+ * Set the given star to a random pos, speed and type
+ */
+void randomStar(int index) {
+
+	float x = static_cast<float>(rand() % screenWidth);
+	float y = static_cast<float>(rand() % screenHeight);
+
+	float speed = static_cast<float>(rand() % 3) + 1.f;
+
+	// 0 or 1 or 2
+	char type = static_cast<char>(rand() % 3);
+
+	stars[index] = {x, y, speed, type};
+}
+
+/**
+ * Draw the right texture for each star
+ */
+void renderStars() {
+
+	Color tint = {255, 255, 255, 175};
+
+	FOR(MAX_STAR) {
+		switch (static_cast<int>(stars[i].w)) {
+		case 0:
+			DrawTexture(RStar, stars[i].x, stars[i].y, tint);
+			break;
+
+		case 1:
+			DrawTexture(BStar, stars[i].x, stars[i].y, tint);
+			break;
+
+		case 2:
+			DrawTexture(YStar, stars[i].x, stars[i].y, tint);
+			break;
+		}
+	}
+}
+
+/**
+ * move the stars by their own speed
+ */
+void moveStars() {
+	FOR(MAX_STAR) {
+		stars[i].y += stars[i].z;
+
+		if (stars[i].y > screenHeight) {
+
+			randomStar(i);
+
+			// spawn the at the top of the screen
+			stars[i].y = -5;
+		}
+	}
 }
