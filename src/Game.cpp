@@ -4,7 +4,7 @@
  * Doing this as a real practice in game developing
  *
  * TODO vfx
- * TODO fix enemy spawning
+ * TODO fix enemy firing
 **/
 #include "raylib/include/raylib.h"
 #include "json/json.hpp"
