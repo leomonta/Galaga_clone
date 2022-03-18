@@ -4,10 +4,10 @@ A simple galaga clone done entirely by me as an exercise for game deveopment
 
 Done in a single file on purpose, minimal ADT, (except a single struct for easily managing runtime variables)
 
-Depends on two library
+Depends on two library:
 
-[raylib](https://github.com/raysan5/raylib) -> for the graphics API
-[jsoncpp](https://github.com/nlohmann/json) -> for saving highScores in a json file
+* [raylib](https://github.com/raysan5/raylib) -> for the graphics API
+* [jsoncpp](https://github.com/nlohmann/json) -> for saving highScores in a json file
 
 ## Features
 * The spaceship can move 4-way and shoot at the same time, although slowed down,
