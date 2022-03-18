@@ -101,13 +101,12 @@ const RuntimeVals default_stat;
 #define screenWidth		 800
 #define screenHeight	 1000
 
-const int fps = 30;
+const int fps = 1;
 Texture	  spaceship_sprite;
 Texture	  Enemyship_sprite;
 Texture	  Upgrade_bullet;
 Texture	  Upgrade_speed;
 Texture	  Upgrade_pacman;
-Texture	  Background;
 Texture	  RStar;
 Texture	  BStar;
 Texture	  YStar;
@@ -135,15 +134,14 @@ int main(void) {
 	srand((unsigned int)time(0));
 	InitWindow(screenWidth, screenHeight, "Galaga clone by Leonardo");
 
-	spaceship_sprite = LoadTexture("./res/spaceship.png");
-	Enemyship_sprite = LoadTexture("./res/enemyship.png");
-	Upgrade_bullet	 = LoadTexture("./res/upgrade_bullet.png");
-	Upgrade_speed	 = LoadTexture("./res/upgrade_speed.png");
-	Upgrade_pacman	 = LoadTexture("./res/upgrade_pacman.png");
-	Background		 = LoadTexture("./res/background.png");
-	RStar			 = LoadTexture("./res/star_red.png");
-	BStar			 = LoadTexture("./res/star_blue.png");
-	YStar			 = LoadTexture("./res/star_yellow.png");
+	spaceship_sprite = LoadTexture("./res/img/ships/spaceship.png");
+	Enemyship_sprite = LoadTexture("./res/img/ships/enemyship.png");
+	Upgrade_bullet	 = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
+	Upgrade_speed	 = LoadTexture("./res/img/upgrades/upgrade_speed.png");
+	Upgrade_pacman	 = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
+	RStar			 = LoadTexture("./res/img/stars/star_red.png");
+	BStar			 = LoadTexture("./res/img/stars/star_blue.png");
+	YStar			 = LoadTexture("./res/img/stars/star_yellow.png");
 	Consolas		 = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
 	HideCursor();
 	// Loading textures
