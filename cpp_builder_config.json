@@ -11,7 +11,7 @@
 			"src"
 		],
 		"libraryDir": [
-			"ext/raylib/lib"
+			"ext/raylib/lib/debug"
 		],
 		"objectsDir": "objs",
 		"exeDir": "bin"

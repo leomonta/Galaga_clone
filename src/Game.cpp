@@ -32,6 +32,8 @@ using json = nlohmann::json;
 #define DefaultStar \
 	{ -1, -1, -1, -1 }
 
+#define UNIFORM_LOC_LIGHT_POS 26 // last raylib loc is 25
+#define UNIFORM_NAME_LIGHT_POS "lightPos" 
 // drawing loops
 void gameLoop();
 void deathLoop();
@@ -145,6 +147,9 @@ int main(void) {
 	YStar			 = LoadTexture("./res/img/stars/star_yellow.png");
 	Consolas		 = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
 	starShader		 = LoadShader("./res/shaders/light.vert", "./res/shaders/light.frag");
+
+	starShader.locs[UNIFORM_LOC_LIGHT_POS] = GetShaderLocation(starShader, UNIFORM_NAME_LIGHT_POS);
+
 	HideCursor();
 	// Loading textures
 
@@ -902,6 +907,10 @@ void renderStars() {
 	BeginShaderMode(starShader);
 
 	FOR(MAX_STAR) {
+
+		float lightPos[] = {stars[i].x + 5.f, stars[i].y + 5.f};
+		SetShaderValueV(starShader, starShader.locs[UNIFORM_LOC_LIGHT_POS], &lightPos, SHADER_UNIFORM_FLOAT, 2);
+
 		unsigned char light = static_cast<unsigned char>(stars[i].z * 50);
 		switch (static_cast<int>(stars[i].w)) {
 		case 0:
