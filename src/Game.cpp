@@ -6,7 +6,6 @@
  * TODO vfx
  * TODO fix enemy firing
  * TODO add stars
- * TODO add messages for points and upgrades
  **/
 #include "nlohmann/json.hpp"
 #include "raylib.h"
@@ -113,7 +112,7 @@ struct notifRes {
 	const char *texts[MAX_NOTIFICATIONS];
 	char        countDowns[MAX_NOTIFICATIONS];
 	Vector2     positions[MAX_NOTIFICATIONS];
-	char        index = 0;
+	int         index = 0;
 } notifRes;
 
 #define spaceship_width  30
@@ -747,7 +746,7 @@ void fireBullets() {
 
 	float counter = (static_cast<float>(Runtime.spaceship_num_bullets) / 2.f - step);
 	for (int i = 0; i < Runtime.spaceship_num_bullets; i++) {
-		addBullet({Runtime.spaceship_box.x + spaceship_width / 2, Runtime.spaceship_box.y, counter, -12}, -1);
+		addBullet({Runtime.spaceship_box.x + spaceship_width / 2, Runtime.spaceship_box.y + spaceship_height / 3, counter, -12}, -1);
 
 		counter -= 1;
 	}
@@ -942,11 +941,11 @@ void renderStars() {
 			col = {10, 10, 255, light}; // BLUE
 		}
 
-		auto width = Star_ATL.width / 3.f;
+		auto width = static_cast<float>(Star_ATL.width) / 3.f;
 
 		Vector2 pos = {stars[i].x, stars[i].y};
 
-		Rectangle tile = {width * type, 0.f, width, Star_ATL.height};
+		Rectangle tile = {width * static_cast<float>(type), 0.f, width, static_cast<float>(Star_ATL.height)};
 
 		// DrawTexture(Star_ATL, posX, posY, col);
 		DrawTextureRec(Star_ATL, tile, pos, col);
@@ -960,12 +959,12 @@ void moveStars() {
 	FOR(MAX_STAR) {
 		stars[i].y += stars[i].z;
 
-		if (stars[i].y - Star_ATL.height > static_cast<float>(screenHeight)) {
+		if (static_cast<int>(stars[i].y) - Star_ATL.height > screenHeight) {
 
 			randomStar(i);
 
 			// spawn the at the top of the screen
-			stars[i].y = -Star_ATL.height;
+			stars[i].y = static_cast<float>(-Star_ATL.height);
 		}
 	}
 }
@@ -978,6 +977,7 @@ void notification::notify(const char *s, Vector2 pos) {
 	notifRes.countDowns[notifRes.index] = 2 * fps;
 	notifRes.positions[notifRes.index]  = pos;
 	notifRes.index++;
+
 	if (notifRes.index == MAX_NOTIFICATIONS) {
 		notifRes.index = 0;
 	}
@@ -992,6 +992,7 @@ void notification::tick() {
 			notifRes.texts[i] = nullptr;
 		} else {
 			notifRes.countDowns[i]--;
+			notifRes.positions[i].y += 1;
 		}
 	}
 }
@@ -1007,8 +1008,10 @@ void notification::renderNotifications() {
 			float dec = (col.a / (fps * 2.f));
 			dec *= notifRes.countDowns[i];
 			col.a = static_cast<unsigned char>(dec);
-			notifRes.positions[i].y += 1;
-			DrawText(notifRes.texts[i], notifRes.positions[i].x, notifRes.positions[i].y, 7, col);
+
+			int posX = static_cast<int>(notifRes.positions[i].x);
+			int posY = static_cast<int>(notifRes.positions[i].y);
+			DrawText(notifRes.texts[i], posX, posY, 7, col);
 		}
 	}
 }
