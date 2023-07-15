@@ -101,7 +101,7 @@ const RuntimeVals default_stat;
 #define screenWidth		 800
 #define screenHeight	 1000
 
-const int fps = 1;
+const int fps = 30;
 Texture	  spaceship_sprite;
 Texture	  Enemyship_sprite;
 Texture	  Upgrade_bullet;
@@ -110,6 +110,7 @@ Texture	  Upgrade_pacman;
 Texture	  RStar;
 Texture	  BStar;
 Texture	  YStar;
+Shader	  starShader;
 Font	  Consolas;
 double	  loopTime;
 int		  exitCount = 0;
@@ -143,6 +144,7 @@ int main(void) {
 	BStar			 = LoadTexture("./res/img/stars/star_blue.png");
 	YStar			 = LoadTexture("./res/img/stars/star_yellow.png");
 	Consolas		 = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
+	starShader		 = LoadShader("./res/shaders/light.vert", "./res/shaders/light.frag");
 	HideCursor();
 	// Loading textures
 
@@ -220,6 +222,10 @@ int main(void) {
 	UnloadTexture(Upgrade_bullet);
 	UnloadTexture(Upgrade_pacman);
 	UnloadTexture(Upgrade_speed);
+	UnloadTexture(RStar);
+	UnloadTexture(BStar);
+	UnloadTexture(YStar);
+	UnloadShader(starShader);
 	UnloadFont(Consolas);
 
 	CloseWindow(); // Close window and OpenGL context
@@ -893,23 +899,26 @@ void randomStar(int index) {
  */
 void renderStars() {
 
+	BeginShaderMode(starShader);
+
 	FOR(MAX_STAR) {
 		unsigned char light = static_cast<unsigned char>(stars[i].z * 50);
-		Color		  tint	= {255, 255, 255, light};
 		switch (static_cast<int>(stars[i].w)) {
 		case 0:
-			DrawTexture(RStar, stars[i].x, stars[i].y, tint);
+			DrawTexture(RStar, stars[i].x, stars[i].y, {255, 10, 10, light});
 			break;
 
 		case 1:
-			DrawTexture(BStar, stars[i].x, stars[i].y, tint);
+			DrawTexture(BStar, stars[i].x, stars[i].y, {10, 10, 255, light});
 			break;
 
 		case 2:
-			DrawTexture(YStar, stars[i].x, stars[i].y, tint);
+			DrawTexture(YStar, stars[i].x, stars[i].y, {128, 128, 10, light});
 			break;
 		}
 	}
+
+	EndShaderMode();
 }
 
 /**
