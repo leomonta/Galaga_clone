@@ -23,10 +23,11 @@ using json = nlohmann::json;
 
 #define FOR(x) for (int i = 0; i < x; i++)
 
-#define MAX_BULLETS     1000
-#define MAX_ENEMY       500
-#define MAX_STAR        100
-#define MAX_LENGHT_NAME 6
+#define MAX_BULLETS       1000
+#define MAX_NOTIFICATIONS 10
+#define MAX_ENEMY         500
+#define MAX_STAR          100
+#define MAX_LENGHT_NAME   6
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
 #define DefaultShip \
@@ -34,10 +35,9 @@ using json = nlohmann::json;
 #define DefaultStar \
 	{ -1, -1, -1, -1 }
 
-#define ATTRIB_LOC_LIGHT_POS  26 // last raylib loc is 25
-#define ATTRIB_NAME_LIGHT_POS "lightPos"
 // drawing loops
 void gameLoop();
+void pauseLoop();
 void deathLoop();
 
 // Each function should be small and execute only what it has to
@@ -61,6 +61,13 @@ void    fillStars();
 void    randomStar(int index);
 void    renderStars();
 void    moveStars();
+
+namespace notification {
+
+	void notify(const char *s, Vector2 pos);
+	void renderNotifications();
+	void tick();
+} // namespace notification
 
 // The fist two values represent the coordinates, the latter two the accelleration
 Vector4 bullets[MAX_BULLETS];
@@ -102,6 +109,13 @@ struct RuntimeVals {
 } Runtime;
 const RuntimeVals default_stat;
 
+struct notifRes {
+	const char *texts[MAX_NOTIFICATIONS];
+	char        countDowns[MAX_NOTIFICATIONS];
+	Vector2     positions[MAX_NOTIFICATIONS];
+	char        index = 0;
+} notifRes;
+
 #define spaceship_width  30
 #define spaceship_height 30
 #define screenWidth      800
@@ -116,7 +130,6 @@ Texture   Upgrade_pacman;
 Texture   Star_ATL;
 Font      Consolas;
 double    loopTime;
-int       exitCount = 0;
 
 int main(void) {
 	// ------------------------------------------------------------------------------------- Initialization
@@ -161,6 +174,8 @@ int main(void) {
 			continue;
 		}
 
+		notification::tick();
+
 		prev = std::chrono::high_resolution_clock::now();
 
 		// Main game loop
@@ -175,34 +190,7 @@ int main(void) {
 
 		// pause screen loop
 		if (Runtime.pause) {
-			BeginDrawing();
-
-			// screen opacity
-			DrawRectangle(0, 0, screenWidth, screenHeight, {0, 0, 0, 128});
-
-			// pause message
-			DrawText("Game Paused", 200, 400, 30, WHITE);
-			DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
-			DrawText("Press Q to close", 250, 470, 20, WHITE);
-
-			EndDrawing();
-
-			while (true) {
-
-				PollInputEvents();
-
-				if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-					Runtime.close = true;
-					break;
-				}
-
-				// Unpause Button
-				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
-					Runtime.pause = false;
-					break;
-				}
-			}
-			PollInputEvents();
+			pauseLoop();
 		}
 	}
 
@@ -219,6 +207,41 @@ int main(void) {
 
 	return 0;
 	//-------------------------------------------------------------------------------------- End de-Initialization
+}
+
+/**
+ * print a couple messages just once
+ */
+void pauseLoop() {
+
+	BeginDrawing();
+
+	// screen opacity
+	DrawRectangle(0, 0, screenWidth, screenHeight, {0, 0, 0, 128});
+
+	// pause message
+	DrawText("Game Paused", 200, 400, 30, WHITE);
+	DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
+	DrawText("Press Q to close", 250, 470, 20, WHITE);
+
+	EndDrawing();
+
+	while (true) {
+
+		PollInputEvents();
+
+		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
+			Runtime.close = true;
+			break;
+		}
+
+		// Unpause Button
+		if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
+			Runtime.pause = false;
+			break;
+		}
+	}
+	PollInputEvents();
 }
 
 /**
@@ -318,6 +341,8 @@ void gameLoop() {
 	text += "\n Health: " + std::to_string(Runtime.spaceship_health);
 	text += "\n Score: " + std::to_string(Runtime.score);
 	DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
+
+	notification::renderNotifications();
 
 	EndDrawing();
 	//---------------------------------------------------------------------------------- End draw
@@ -496,6 +521,7 @@ void moveEnemies() {
 
 		// and remove it if it goes offscreen or is dead
 		if (e_health[i] <= 0) {
+			notification::notify("+ 10", (Vector2){enemies[i].x, enemies[i].y});
 			enemies[i] = DefaultShip;
 			Runtime.score += 10;
 		}
@@ -620,14 +646,18 @@ void checkEntitiesCollisions() {
 	// check collision with upgrades
 	if (CheckCollisionRecs(Runtime.upgrade_box, Runtime.spaceship_box)) {
 
+		Vector2 pos = (Vector2){Runtime.upgrade_box.x, Runtime.upgrade_box.y};
+
 		switch (Runtime.upgrade_type) {
 
 		case 0: // pacman upgrade
+			notification::notify("+ 500", pos);
 			Runtime.score += 500;
 			Runtime.upgr_PacmanEffect = true;
 			break;
 
 		case 1: // speed upgrade
+			notification::notify("+ 200", pos);
 			Runtime.score += 200;
 			Runtime.spaceship_Maxspeed++;
 			if (Runtime.spaceship_Maxspeed >= 15) {
@@ -636,6 +666,7 @@ void checkEntitiesCollisions() {
 			break;
 
 		case 2: // bullet upgrade
+			notification::notify("+ 200", pos);
 			Runtime.score += 200;
 			Runtime.spaceship_num_bullets++;
 			if (Runtime.spaceship_num_bullets > 10) {
@@ -935,6 +966,49 @@ void moveStars() {
 
 			// spawn the at the top of the screen
 			stars[i].y = -Star_ATL.height;
+		}
+	}
+}
+
+/**
+ * Insert the notification int the queue
+ */
+void notification::notify(const char *s, Vector2 pos) {
+	notifRes.texts[notifRes.index]      = s;
+	notifRes.countDowns[notifRes.index] = 2 * fps;
+	notifRes.positions[notifRes.index]  = pos;
+	notifRes.index++;
+	if (notifRes.index == MAX_NOTIFICATIONS) {
+		notifRes.index = 0;
+	}
+}
+
+/**
+ * Decrease the countDowns
+ */
+void notification::tick() {
+	for (int i = 0; i < MAX_NOTIFICATIONS; ++i) {
+		if (notifRes.countDowns[i] == 0) {
+			notifRes.texts[i] = nullptr;
+		} else {
+			notifRes.countDowns[i]--;
+		}
+	}
+}
+
+/**
+ * Draw the actual notifications
+ */
+void notification::renderNotifications() {
+
+	for (int i = 0; i < MAX_NOTIFICATIONS; ++i) {
+		auto col = WHITE;
+		if (notifRes.texts[i] != nullptr) {
+			float dec = (col.a / (fps * 2.f));
+			dec *= notifRes.countDowns[i];
+			col.a = static_cast<unsigned char>(dec);
+			notifRes.positions[i].y += 1;
+			DrawText(notifRes.texts[i], notifRes.positions[i].x, notifRes.positions[i].y, 7, col);
 		}
 	}
 }
