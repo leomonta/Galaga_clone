@@ -89,10 +89,10 @@ Vector3 stars[MAX_STAR];
 struct RuntimeVals {
 	// spaceship stats
 	Rectangle spaceship_box         = {400, 800, 31, 31};
-	float     spaceship_speed       = 4.0f;
+	float     spaceship_speed       = 8.0f;
 	int       spaceship_health      = 10;
 	int       spaceship_num_bullets = 1;
-	float     spaceship_Maxspeed    = 4.0f;
+	float     spaceship_Maxspeed    = 8.0f;
 	int       fireCoolDown          = 5;
 	int       e_fireCoolDown        = 10;
 	bool      upgr_PacmanEffect     = false;
@@ -120,7 +120,7 @@ struct notifRes {
 #define screenWidth      800
 #define screenHeight     1000
 
-const int       fps = 30;
+const int       fps = 60;
 Texture         spaceship_sprite;
 Texture         Enemyship_sprite;
 Texture         Upgrade_bullet;
@@ -252,33 +252,35 @@ void pauseLoop() {
  */
 void gameLoop() {
 
+	auto deltaTime = GetFrameTime();
+
 	if (WindowShouldClose()) {
 		Runtime.close = true;
 		return;
 	}
 
-	Runtime.spaceship_speed = Runtime.spaceship_Maxspeed;
+	Runtime.spaceship_speed = Runtime.spaceship_Maxspeed * deltaTime;
 
 	// --------------------------------------------------------------------------------- Check Keyboard
 	// fire bullets when spacebar pressed
 	if (IsKeyDown(KEY_SPACE)) {
 		Runtime.spaceship_speed /= 2;
 		if (Runtime.fireCoolDown < 0) {
-			Runtime.fireCoolDown = default_stat.fireCoolDown;
+			Runtime.fireCoolDown = default_stat.fireCoolDown * deltaTime;
 			fireBullets();
 		}
 	}
 
 	// movement
 	if (IsKeyDown(KEY_RIGHT)) {
-		Runtime.spaceship_box.x += Runtime.spaceship_speed;
+		Runtime.spaceship_box.x += Runtime.spaceship_speed * deltaTime;
 	} else if (IsKeyDown(KEY_LEFT)) {
-		Runtime.spaceship_box.x -= Runtime.spaceship_speed;
+		Runtime.spaceship_box.x -= Runtime.spaceship_speed * deltaTime;
 	}
 	if (IsKeyDown(KEY_UP)) {
-		Runtime.spaceship_box.y -= Runtime.spaceship_speed;
+		Runtime.spaceship_box.y -= Runtime.spaceship_speed * deltaTime;
 	} else if (IsKeyDown(KEY_DOWN)) {
-		Runtime.spaceship_box.y += Runtime.spaceship_speed;
+		Runtime.spaceship_box.y += Runtime.spaceship_speed * deltaTime;
 	}
 
 	// Pause Button
@@ -361,7 +363,7 @@ void gameLoop() {
 	}
 	EndDrawing();
 	//---------------------------------------------------------------------------------- End draw
-	Runtime.fireCoolDown--;
+	Runtime.fireCoolDown -= 1 * deltaTime;
 }
 
 /**
@@ -495,8 +497,8 @@ void moveBullets() {
 		if (bullets[i].x != -1 && bullets[i].y != -1) {
 
 			// advance the bullet
-			bullets[i].x += bullets[i].z;
-			bullets[i].y += bullets[i].w;
+			bullets[i].x += bullets[i].z * GetFrameTime();
+			bullets[i].y += bullets[i].w * GetFrameTime();
 
 			// if it goes offscreen eliminate it
 			if (bullets[i].x < 0 || bullets[i].x > screenWidth || bullets[i].y < 0 || bullets[i].y > screenHeight) {
@@ -509,8 +511,8 @@ void moveBullets() {
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
 
 			// advance the bullet
-			e_bullets[i].x += e_bullets[i].z;
-			e_bullets[i].y += e_bullets[i].w;
+			e_bullets[i].x += e_bullets[i].z * GetFrameTime();
+			e_bullets[i].y += e_bullets[i].w * GetFrameTime();
 
 			// if it goes offscreen eliminate it
 			if (e_bullets[i].x < 0 || e_bullets[i].x > screenWidth || e_bullets[i].y < 0 || e_bullets[i].y > screenHeight) {
@@ -532,7 +534,7 @@ void moveEnemies() {
 			continue;
 		}
 		// move the enemy
-		enemies[i].y++;
+		enemies[i].y += 1 * GetFrameTime();
 
 		// and remove it if it goes offscreen or is dead
 		if (e_health[i] <= 0) {
@@ -973,7 +975,7 @@ void renderStars() {
  */
 void moveStars() {
 	FOR(MAX_STAR) {
-		stars[i].y += stars[i].z;
+		stars[i].y += stars[i].z * GetFrameTime();
 
 		if (static_cast<int>(stars[i].y) - Star_ATL.height > screenHeight) {
 
