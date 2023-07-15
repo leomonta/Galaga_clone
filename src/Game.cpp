@@ -157,51 +157,52 @@ int main(void) {
 		diff = std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count();
 
 		// if a frame has passed
-		if (diff >= 1000 / fps) {
+		if (diff < 1000 / fps) {
+			continue;
+		}
 
-			prev = std::chrono::high_resolution_clock::now();
+		prev = std::chrono::high_resolution_clock::now();
 
-			// Main game loop
-			if (!Runtime.pause) { // Detect window close button or ESC key
-				gameLoop();
-			}
+		// Main game loop
+		if (!Runtime.pause) { // Detect window close button or ESC key
+			gameLoop();
+		}
 
-			// death screnn loop
-			if (Runtime.spaceship_health <= 0) {
-				deathLoop();
-			}
+		// death screnn loop
+		if (Runtime.spaceship_health <= 0) {
+			deathLoop();
+		}
 
-			// pause screen loop
-			if (Runtime.pause) {
-				BeginDrawing();
+		// pause screen loop
+		if (Runtime.pause) {
+			BeginDrawing();
 
-				// screen opacity
-				DrawRectangle(0, 0, screenWidth, screenHeight, {0, 0, 0, 128});
+			// screen opacity
+			DrawRectangle(0, 0, screenWidth, screenHeight, {0, 0, 0, 128});
 
-				// pause message
-				DrawText("Game Paused", 200, 400, 30, WHITE);
-				DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
-				DrawText("Press Q to close", 250, 470, 20, WHITE);
+			// pause message
+			DrawText("Game Paused", 200, 400, 30, WHITE);
+			DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
+			DrawText("Press Q to close", 250, 470, 20, WHITE);
 
-				EndDrawing();
+			EndDrawing();
 
-				while (true) {
+			while (true) {
 
-					PollInputEvents();
-
-					if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-						Runtime.close = true;
-						break;
-					}
-
-					// Unpause Button
-					if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
-						Runtime.pause = false;
-						break;
-					}
-				}
 				PollInputEvents();
+
+				if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
+					Runtime.close = true;
+					break;
+				}
+
+				// Unpause Button
+				if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
+					Runtime.pause = false;
+					break;
+				}
 			}
+			PollInputEvents();
 		}
 	}
 
@@ -487,20 +488,21 @@ void moveEnemies() {
 	FOR(MAX_ENEMY) {
 
 		// if it exist
-		if (enemies[i].x != -40 && enemies[i].y != -40) {
-			// move the enemy
-			enemies[i].y++;
+		if (enemies[i].x == -40 || enemies[i].y == -40) {
+			continue;
+		}
+		// move the enemy
+		enemies[i].y++;
 
-			// and remove it if it goes offscreen or is dead
-			if (e_health[i] <= 0) {
-				enemies[i] = DefaultShip;
-				Runtime.score += 10;
-			}
+		// and remove it if it goes offscreen or is dead
+		if (e_health[i] <= 0) {
+			enemies[i] = DefaultShip;
+			Runtime.score += 10;
+		}
 
-			if (enemies[i].y > screenHeight) {
-				enemies[i] = DefaultShip;
-				Runtime.score -= 50;
-			}
+		if (enemies[i].y > screenHeight) {
+			enemies[i] = DefaultShip;
+			Runtime.score -= 50;
 		}
 	}
 }
@@ -513,55 +515,62 @@ void checkBulletsCollision() {
 	// -------------------------------------------------------------------------------------------- enemy ship collision
 
 	int     temp;
-	Vector4 linebullet, linenemy;
+	Vector4 lineBullet;
 	Vector2 intersect_point;
+
+	// the quest to find one bullet for frame
 	for (int j = 0; j < MAX_ENEMY; j++) {
 
 		// if the enemy is visible
-		if (enemies[j].x != -40) {
+		if (enemies[j].x == -40) {
+			continue;
+		}
 
-			FOR(MAX_BULLETS) {
-				// if the bullet exist and if the enemy is alive
-				if (bullets[i].x != -1 && bullets[i].y != -1 && e_health[j] > 0) {
+		FOR(MAX_BULLETS) {
+			// if the bullet exist and if the enemy is alive
+			if (bullets[i].x == -1 || bullets[i].y == -1 || e_health[j] <= 0) {
+				continue;
+			}
 
-					// check collision for both diagonals
-					for (int k = 0; k < 2; k++) {
+			// check collision for both diagonals
+			for (int k = 0; k < 2; k++) {
 
-						if (k == 0) {
-							// diagonal 1
-							linenemy = {enemies[j].x, enemies[j].y + enemies[j].height, enemies[j].x + enemies[j].width, enemies[j].y};
-						} else {
-							// diagonal 2
-							linenemy = {enemies[j].x, enemies[j].y, enemies[j].x + enemies[j].width, enemies[j].y + enemies[j].height};
-						}
+				Vector4 lineEnemy;
 
-						linebullet = {bullets[i].x, bullets[i].y, bullets[i].x + (bullets[i].z * 2), bullets[i].y + (bullets[i].w * 2)};
+				if (k == 0) {
+					// diagonal 1
+					lineEnemy = {enemies[j].x + enemies[j].width / 2, enemies[j].y, enemies[j].x + enemies[j].width / 2, enemies[j].y + enemies[j].height};
+				} else {
+					// diagonal 2
+					lineEnemy = {enemies[j].x, enemies[j].y + enemies[j].height / 2, enemies[j].x + enemies[j].width, enemies[j].y + enemies[j].height / 2};
+				}
 
-						intersect_point = intersection(linebullet, linenemy);
+				lineBullet = {bullets[i].x, bullets[i].y, bullets[i].x + (bullets[i].z * 2), bullets[i].y + (bullets[i].w * 2)};
 
-						// if something collided
-						if (intersect_point.x != -1) {
+				intersect_point = intersection(lineBullet, lineEnemy);
 
-							bullets[i] = DefaultBullet; // delete bullet
-							e_health[j]--;              // inflict damage
+				// if something collided
+				if (intersect_point.x == -1) {
+					continue;
+				}
 
-							// drop upgrades if the enemy is dead
-							// 20% drop rate and check if the enemy is dead
-							if (rand() % 100 < 20 && e_health[j] <= 0) {
-								Runtime.upgrade_box = {enemies[j].x, enemies[j].y, enemies[j].width, enemies[j].height}; // drop upgrade at enemy old position
-								temp                = rand() % 100;                                                      // decide which upgrade
-								if (temp < 6) {
-									Runtime.upgrade_type = 0; // pacman
-								} else if (temp < 53) {
-									Runtime.upgrade_type = 1; // speed
-								} else if (temp < 100) {
-									Runtime.upgrade_type = 2; // bullet
-								}
-							}
-							break; // next bullet
-						}
+				bullets[i] = DefaultBullet; // delete bullet
+				e_health[j]--;              // inflict damage
+
+				// drop upgrades if the enemy is dead
+				// 20% drop rate and check if the enemy is dead
+				if (rand() % 100 < 20 && e_health[j] <= 0) {
+					Runtime.upgrade_box = {enemies[j].x, enemies[j].y, enemies[j].width, enemies[j].height}; // drop upgrade at enemy old position
+					temp                = rand() % 100;                                                      // decide which upgrade
+					if (temp < 6) {
+						Runtime.upgrade_type = 0; // pacman
+					} else if (temp < 53) {
+						Runtime.upgrade_type = 1; // speed
+					} else if (temp < 100) {
+						Runtime.upgrade_type = 2; // bullet
 					}
 				}
+				break; // next bullet
 			}
 		}
 	}
@@ -584,9 +593,9 @@ void checkBulletsCollision() {
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
 
 			for (int k = 0; k < 2; k++) { // check collision for both diagonals
-				linebullet = {e_bullets[i].x, e_bullets[i].y, e_bullets[i].x + (e_bullets[i].z * 2), e_bullets[i].y + (e_bullets[i].w * 2)};
+				lineBullet = {e_bullets[i].x, e_bullets[i].y, e_bullets[i].x + (e_bullets[i].z * 2), e_bullets[i].y + (e_bullets[i].w * 2)};
 
-				intersect_point = intersection(linebullet, linespace[k]);
+				intersect_point = intersection(lineBullet, linespace[k]);
 
 				if (intersect_point.x != -1) {
 
@@ -649,29 +658,31 @@ void enemyAI() {
 	// enemy AI
 	FOR(MAX_ENEMY) {
 		// check if the enemy exist and i put i little bit of RNG
-		if (enemies[i].x != -40 && e_health[i] >= 0) {
-			if (e_coolDown[i] <= 0 && (rand() % 8) == 1) {
-
-				// distance from spaceship
-				float distx = (enemies[i].x + 15) - (Runtime.spaceship_box.x + 15);
-				float disty = (enemies[i].y + 30) - (Runtime.spaceship_box.y + 15);
-
-				// total distance
-				double num = pow(distx, 2) + pow(disty, 2);
-
-				// i need to reduce the distance to a maximun of 12 togheter, using pitagora
-				// the formula is this
-				float mult = (float)((10 * sqrt(num)) / num);
-				float movx = distx * mult * -1;
-				float movy = disty * mult * -1;
-
-				Vector4 bullet = {enemies[i].x + 15, enemies[i].y + enemies[i].height, movx, movy};
-
-				addBullet(bullet, i);
-				e_coolDown[i] = static_cast<char>(default_stat.e_fireCoolDown);
-			}
-			e_coolDown[i]--;
+		if (enemies[i].x == -40 || e_health[i] < 0) {
+			continue;
 		}
+
+		if (e_coolDown[i] <= 0 && (rand() % 8) == 1) {
+
+			// distance from spaceship
+			float distx = (enemies[i].x + 15) - (Runtime.spaceship_box.x + 15);
+			float disty = (enemies[i].y + 30) - (Runtime.spaceship_box.y + 15);
+
+			// total distance
+			double num = pow(distx, 2) + pow(disty, 2);
+
+			// i need to reduce the distance to a maximun of 12 togheter, using pitagora
+			// the formula is this
+			float mult = (float)((10 * sqrt(num)) / num);
+			float movx = distx * mult * -1;
+			float movy = disty * mult * -1;
+
+			Vector4 bullet = {enemies[i].x + 15, enemies[i].y + enemies[i].height, movx, movy};
+
+			addBullet(bullet, i);
+			e_coolDown[i] = static_cast<char>(default_stat.e_fireCoolDown);
+		}
+		e_coolDown[i]--;
 	}
 }
 
@@ -918,12 +929,12 @@ void moveStars() {
 	FOR(MAX_STAR) {
 		stars[i].y += stars[i].z;
 
-		if (stars[i].y > screenHeight) {
+		if (stars[i].y - Star_ATL.height > static_cast<float>(screenHeight)) {
 
 			randomStar(i);
 
 			// spawn the at the top of the screen
-			stars[i].y = -5;
+			stars[i].y = -Star_ATL.height;
 		}
 	}
 }
