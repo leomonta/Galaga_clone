@@ -120,17 +120,19 @@ struct notifRes {
 #define screenWidth      800
 #define screenHeight     1000
 
-const int fps = 30;
-Texture   spaceship_sprite;
-Texture   Enemyship_sprite;
-Texture   Upgrade_bullet;
-Texture   Upgrade_speed;
-Texture   Upgrade_pacman;
-Texture   Star_ATL;
-Font      Consolas;
-double    loopTime;
+const int       fps = 30;
+Texture         spaceship_sprite;
+Texture         Enemyship_sprite;
+Texture         Upgrade_bullet;
+Texture         Upgrade_speed;
+Texture         Upgrade_pacman;
+Texture         Star_ATL;
+RenderTexture2D frameBuffer;
+Shader          bloomShader;
+Font            Consolas;
+double          loopTime;
 
-int main(void) {
+int main() {
 	// ------------------------------------------------------------------------------------- Initialization
 
 	// Initial preparations
@@ -144,6 +146,8 @@ int main(void) {
 	Upgrade_pacman   = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
 	Star_ATL         = LoadTexture("./res/img/stars/star_atlas.png");
 	Consolas         = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
+	frameBuffer      = LoadRenderTexture(screenWidth, screenHeight);
+	bloomShader      = LoadShader(nullptr, "./res/shaders/bloom.frag");
 
 	HideCursor();
 	// Loading textures
@@ -303,46 +307,58 @@ void gameLoop() {
 	}
 
 	// --------------------------------------------------------------------------------- Draw
-	BeginDrawing();
 
-	// draw screen
-	ClearBackground({0, 0, 40, 255});
+	// render to framebuffer
+	BeginTextureMode(frameBuffer);
+	{
+		// draw screen
+		ClearBackground({0, 0, 40, 255});
 
-	pacmanEffect(spaceship_sprite);
+		pacmanEffect(spaceship_sprite);
 
-	// draw objects
-	DrawTextureV(spaceship_sprite, {Runtime.spaceship_box.x, Runtime.spaceship_box.y}, WHITE);
-	FOR(MAX_ENEMY) {
+		// draw objects
+		DrawTextureV(spaceship_sprite, {Runtime.spaceship_box.x, Runtime.spaceship_box.y}, WHITE);
+		FOR(MAX_ENEMY) {
 
-		if (enemies[i].x != -40 && enemies[i].y != -40) {
-			DrawTextureV(Enemyship_sprite, {enemies[i].x, enemies[i].y}, WHITE);
+			if (enemies[i].x != -40 && enemies[i].y != -40) {
+				DrawTextureV(Enemyship_sprite, {enemies[i].x, enemies[i].y}, WHITE);
+			}
 		}
+
+		// draw the correct upgrade
+		if (Runtime.upgrade_type == 0) {
+			DrawTexture(Upgrade_pacman, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
+
+		} else if (Runtime.upgrade_type == 1) {
+			DrawTexture(Upgrade_speed, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
+
+		} else if (Runtime.upgrade_type == 2) {
+			DrawTexture(Upgrade_bullet, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
+		}
+
+		renderStars();
+
+		renderBullets();
 	}
+	EndTextureMode();
 
-	// draw the correct upgrade
-	if (Runtime.upgrade_type == 0) {
-		DrawTexture(Upgrade_pacman, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
+	BeginDrawing();
+	{
+		BeginShaderMode(bloomShader);
+		{
+			DrawTextureRec(frameBuffer.texture, (Rectangle){0.f, 0.f, frameBuffer.texture.width, -frameBuffer.texture.height}, (Vector2){0.f, 0.f}, WHITE);
+		}
+		EndShaderMode();
+		// Draw spaceship stats on the screen
+		std::string text = "Bullets: " + std::to_string(Runtime.spaceship_num_bullets);
+		text += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
+		text += "\n Health: " + std::to_string(Runtime.spaceship_health);
+		text += "\n Score: " + std::to_string(Runtime.score);
+		DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
+		DrawFPS(100, 10);
 
-	} else if (Runtime.upgrade_type == 1) {
-		DrawTexture(Upgrade_speed, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
-
-	} else if (Runtime.upgrade_type == 2) {
-		DrawTexture(Upgrade_bullet, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
+		notification::renderNotifications();
 	}
-
-	renderStars();
-
-	renderBullets();
-
-	// Draw spaceship stats on the screen
-	std::string text = "Bullets: " + std::to_string(Runtime.spaceship_num_bullets);
-	text += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
-	text += "\n Health: " + std::to_string(Runtime.spaceship_health);
-	text += "\n Score: " + std::to_string(Runtime.score);
-	DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
-
-	notification::renderNotifications();
-
 	EndDrawing();
 	//---------------------------------------------------------------------------------- End draw
 	Runtime.fireCoolDown--;
