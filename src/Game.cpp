@@ -889,7 +889,7 @@ void renderStars() {
 		// this can be moved to the shader
 		auto type = static_cast<int>(stars[i].x) % 3;
 
-		unsigned char light = static_cast<unsigned char>(stars[i].z * 60);
+		unsigned char light = static_cast<unsigned char>(stars[i].z * 60 + 20);
 		Color         col   = {255, 255, 255, light};
 
 		if (type == 0) {
