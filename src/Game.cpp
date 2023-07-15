@@ -5,10 +5,11 @@
  *
  * TODO vfx
  * TODO fix enemy firing
+ * TODO add stars
+ * TODO add messages for points and upgrades
  **/
-#include "raylib.h"
-
 #include "nlohmann/json.hpp"
+#include "raylib.h"
 
 using json = nlohmann::json;
 
@@ -113,23 +114,9 @@ Texture   Upgrade_bullet;
 Texture   Upgrade_speed;
 Texture   Upgrade_pacman;
 Texture   Star_ATL;
-Shader    starShader;
 Font      Consolas;
 double    loopTime;
 int       exitCount = 0;
-
-/**
- * On Wsl for some reasons there are random keys queued on the middle of the execution, prevent them from closing the game immediatly
- */
-bool ShouldExit() {
-	if (WindowShouldClose()) {
-		++exitCount;
-		if (exitCount >= 2) {
-			return true;
-		}
-	}
-	return false;
-}
 
 int main(void) {
 	// ------------------------------------------------------------------------------------- Initialization
@@ -144,10 +131,7 @@ int main(void) {
 	Upgrade_speed    = LoadTexture("./res/img/upgrades/upgrade_speed.png");
 	Upgrade_pacman   = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
 	Star_ATL         = LoadTexture("./res/img/stars/star_atlas.png");
-	Consolas         = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
-	starShader       = LoadShader("./res/shaders/light.vert", "./res/shaders/light.frag");
-
-	starShader.locs[ATTRIB_LOC_LIGHT_POS] = GetShaderLocationAttrib(starShader, ATTRIB_NAME_LIGHT_POS);
+	Consolas         = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
 
 	HideCursor();
 	// Loading textures
@@ -158,7 +142,8 @@ int main(void) {
 
 	resetStats();
 	SetTargetFPS(fps); // Set our game to run at given frames-per-second
-	                   //-------------------------------------------------------------------------------------- End initialization
+	SetExitKey(KEY_NULL);
+	//-------------------------------------------------------------------------------------- End initialization
 
 	auto      prev = std::chrono::high_resolution_clock::now();
 	auto      now  = std::chrono::high_resolution_clock::now();
@@ -195,8 +180,8 @@ int main(void) {
 
 				// pause message
 				DrawText("Game Paused", 200, 400, 30, WHITE);
-				DrawText("Press Esc to exit", 250, 440, 20, WHITE);
-				DrawText("Press P to unpause", 250, 470, 20, WHITE);
+				DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
+				DrawText("Press Q to close", 250, 470, 20, WHITE);
 
 				EndDrawing();
 
@@ -204,13 +189,13 @@ int main(void) {
 
 					PollInputEvents();
 
-					if (ShouldExit()) {
+					if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
 						Runtime.close = true;
 						break;
 					}
 
 					// Unpause Button
-					if (IsKeyPressed(KEY_P)) {
+					if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
 						Runtime.pause = false;
 						break;
 					}
@@ -227,7 +212,6 @@ int main(void) {
 	UnloadTexture(Upgrade_pacman);
 	UnloadTexture(Upgrade_speed);
 	UnloadTexture(Star_ATL);
-	UnloadShader(starShader);
 	UnloadFont(Consolas);
 
 	CloseWindow(); // Close window and OpenGL context
@@ -241,7 +225,7 @@ int main(void) {
  */
 void gameLoop() {
 
-	if (ShouldExit()) {
+	if (WindowShouldClose()) {
 		Runtime.close = true;
 		return;
 	}
@@ -271,7 +255,7 @@ void gameLoop() {
 	}
 
 	// Pause Button
-	if (IsKeyPressed(KEY_P)) {
+	if (IsKeyPressed(KEY_P) || IsKeyPressed(KEY_ESCAPE)) {
 		Runtime.pause = true;
 		return;
 	}
@@ -301,8 +285,6 @@ void gameLoop() {
 	// draw screen
 	ClearBackground({0, 0, 40, 255});
 
-	renderStars();
-
 	pacmanEffect(spaceship_sprite);
 
 	// draw objects
@@ -325,13 +307,15 @@ void gameLoop() {
 		DrawTexture(Upgrade_bullet, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
 	}
 
+	renderStars();
+
 	renderBullets();
 
 	// Draw spaceship stats on the screen
 	std::string text = "Bullets: " + std::to_string(Runtime.spaceship_num_bullets);
-	text             += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
-	text             += "\n Health: " + std::to_string(Runtime.spaceship_health);
-	text             += "\n Score: " + std::to_string(Runtime.score);
+	text += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
+	text += "\n Health: " + std::to_string(Runtime.spaceship_health);
+	text += "\n Score: " + std::to_string(Runtime.score);
 	DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
 
 	EndDrawing();
@@ -348,7 +332,7 @@ void deathLoop() {
 
 	ClearBackground(BLACK);
 	DrawText("Game Over", 200, 400, 30, WHITE);
-	DrawText("Press Esc to exit", 250, 440, 20, WHITE);
+	DrawText("Press Q to exit", 250, 440, 20, WHITE);
 	DrawText("Press Enter to retry", 250, 470, 20, WHITE);
 
 	EndDrawing();
@@ -361,7 +345,7 @@ void deathLoop() {
 		return;
 	}
 
-	if (ShouldExit()) {
+	if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
 		Runtime.close = true;
 		save();
 		return;
@@ -509,12 +493,12 @@ void moveEnemies() {
 
 			// and remove it if it goes offscreen or is dead
 			if (e_health[i] <= 0) {
-				enemies[i]    = DefaultShip;
+				enemies[i] = DefaultShip;
 				Runtime.score += 10;
 			}
 
 			if (enemies[i].y > screenHeight) {
-				enemies[i]    = DefaultShip;
+				enemies[i] = DefaultShip;
 				Runtime.score -= 50;
 			}
 		}
@@ -630,7 +614,7 @@ void checkEntitiesCollisions() {
 		switch (Runtime.upgrade_type) {
 
 		case 0: // pacman upgrade
-			Runtime.score             += 500;
+			Runtime.score += 500;
 			Runtime.upgr_PacmanEffect = true;
 			break;
 
@@ -848,7 +832,7 @@ void save() {
 			name[nameIndex] = '\0';
 		}
 
-		if (ShouldExit()) {
+		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
 			Runtime.close = true;
 			return;
 		}
@@ -900,45 +884,31 @@ void randomStar(int index) {
  */
 void renderStars() {
 
-	BeginShaderMode(starShader);
-
 	FOR(MAX_STAR) {
 
 		// this can be moved to the shader
 		auto type = static_cast<int>(stars[i].x) % 3;
 
-		unsigned char light = static_cast<unsigned char>(stars[i].z * 50);
+		unsigned char light = static_cast<unsigned char>(stars[i].z * 60);
 		Color         col   = {255, 255, 255, light};
 
 		if (type == 0) {
-			col = {255, 10, 10, light};
+			col = {255, 10, 10, light}; // RED
 		} else if (type == 1) {
-			col = {10, 10, 255, light};
+			col = {128, 128, 10, light}; // YELLOW
 		} else if (type == 2) {
-			col = {128, 128, 10, light};
+			col = {10, 10, 255, light}; // BLUE
 		}
 
-		auto posX = static_cast<int>(stars[i].x);
-		auto posY = static_cast<int>(stars[i].y);
+		auto width = Star_ATL.width / 3.f;
 
-		DrawTexture(Star_ATL, posX, posY, col);
+		Vector2 pos = {stars[i].x, stars[i].y};
 
-		/*switch (type) {
-		case 0:
-		    DrawTexture(RStar, stars[i].x, stars[i].y, {255, 10, 10, light});
-		    break;
+		Rectangle tile = {width * type, 0.f, width, Star_ATL.height};
 
-		case 1:
-		    DrawTexture(BStar, stars[i].x, stars[i].y, {10, 10, 255, light});
-		    break;
-
-		case 2:
-		    DrawTexture(YStar, stars[i].x, stars[i].y, {128, 128, 10, light});
-		    break;
-		}*/
+		// DrawTexture(Star_ATL, posX, posY, col);
+		DrawTextureRec(Star_ATL, tile, pos, col);
 	}
-
-	EndShaderMode();
 }
 
 /**

@@ -22,28 +22,5 @@
 			],
 			"preLaunchTask": "C/C++: g++.exe build all modified files"
 		},
-		{
-			"name": "Launch",
-			"type": "cppvsdbg",
-			"request": "launch",
-			"program": "${workspaceFolder}/exe/Game.bin",
-			"args": [],
-			"stopAtEntry": false,
-			"console": "integratedTerminal",
-			"cwd": "${workspaceFolder}/exe",
-			"environment": []
-		},
-		{
-			"name": "Build and Launch",
-			"type": "cppvsdbg",
-			"request": "launch",
-			"program": "${workspaceFolder}/bin/Game.exe",
-			"args": [],
-			"stopAtEntry": false,
-			"cwd": "${workspaceFolder}",
-			"console": "integratedTerminal",
-			"environment": [],
-			"preLaunchTask": "C/C++: g++.exe build all modified files"
-		}
 	]
 }
