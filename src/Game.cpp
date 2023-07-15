@@ -5,7 +5,7 @@
  *
  * TODO vfx
  * TODO fix enemy firing
-**/
+ **/
 #include "raylib/include/raylib.h"
 #include "json/json.hpp"
 
@@ -21,8 +21,8 @@ using json = nlohmann::json;
 
 #define FOR(x) for (int i = 0; i < x; i++)
 
-#define MAX_BULLETS 1000
-#define MAX_ENEMY 500
+#define MAX_BULLETS		1000
+#define MAX_ENEMY		500
 #define MAX_LENGHT_NAME 6
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
@@ -58,6 +58,7 @@ Vector4 e_bullets[MAX_BULLETS];
 // bad implementation ahead
 // The coordinates of all the enemies
 Rectangle enemies[MAX_ENEMY];
+char	  e_coolDown[MAX_ENEMY];
 int		  e_health[MAX_ENEMY];
 
 // Runtime values that are gonna change
@@ -69,6 +70,7 @@ struct RuntimeVals {
 	int		  spaceship_num_bullets = 1;
 	float	  spaceship_Maxspeed	= 4.0f;
 	int		  fireCoolDown			= 5;
+	int		  e_fireCoolDown		= 10;
 	bool	  upgr_PacmanEffect		= false;
 
 	Rectangle upgrade_box	   = {-40, -40, 31, 31};
@@ -82,10 +84,10 @@ struct RuntimeVals {
 } Runtime;
 const RuntimeVals default_stat;
 
-#define spaceship_width 30
+#define spaceship_width	 30
 #define spaceship_height 30
-#define screenWidth 800
-#define screenHeight 1000
+#define screenWidth		 800
+#define screenHeight	 1000
 
 const int	fps = 30;
 std::string text;
@@ -97,6 +99,20 @@ Texture		Upgrade_pacman;
 Texture		Background;
 Font		Consolas;
 double		loopTime;
+int			exitCount = 0;
+
+/**
+ * On Wsl for some reasons there are random keys queued on the middle of the execution, prevent them from closing the game immediatly
+ */
+bool ShouldExit() {
+	if (WindowShouldClose()) {
+		++exitCount;
+		if (exitCount >= 2) {
+			return true;
+		}
+	}
+	return false;
+}
 
 int main(void) {
 	// ------------------------------------------------------------------------------------- Initialization
@@ -127,6 +143,7 @@ int main(void) {
 
 	// repeat loop
 	while (!Runtime.close) {
+
 		now = std::chrono::high_resolution_clock::now();
 
 		diff = std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count();
@@ -164,10 +181,7 @@ int main(void) {
 
 					PollInputEvents();
 
-					if (IsKeyPressed(KEY_I)) {
-					}
-
-					if (WindowShouldClose()) {
+					if (ShouldExit()) {
 						Runtime.close = true;
 						break;
 					}
@@ -178,7 +192,6 @@ int main(void) {
 						break;
 					}
 				}
-
 				PollInputEvents();
 			}
 		}
@@ -199,11 +212,11 @@ int main(void) {
 }
 
 /**
-* take care of the entire game loop, drawing stuff
-*/
+ * take care of the entire game loop, drawing stuff
+ */
 void gameLoop() {
 
-	if (WindowShouldClose()) {
+	if (ShouldExit()) {
 		Runtime.close = true;
 		return;
 	}
@@ -215,7 +228,7 @@ void gameLoop() {
 	if (IsKeyDown(KEY_SPACE)) {
 		Runtime.spaceship_speed -= 3;
 		if (Runtime.fireCoolDown < 0) {
-			Runtime.fireCoolDown = 5;
+			Runtime.fireCoolDown = default_stat.fireCoolDown;
 			fireBullets();
 		}
 	}
@@ -240,13 +253,12 @@ void gameLoop() {
 
 	// more upgrade, more enemies
 	int spawn = int(rand()) % 10000;
-	//std::cout << spawn << " : " << Runtime.enemy_spawn_rate << std::endl;
 	if (spawn < int(Runtime.enemy_spawn_rate)) {
 		spawnEnemies();
 		Runtime.enemy_spawn_rate = default_stat.enemy_spawn_rate;
 	} else {
-		// increase the probablity of spawning based if enemy did not spawn
-		//							0.1 for every bullet upgrade, for every speed upgrade, and for the pacman effect
+		// increase the probablity of spawning if enemy did not spawn
+		//							0.1 for every bullet upgrade,	for every speed upgrade,											  and for the pacman effect
 		Runtime.enemy_spawn_rate += Runtime.spaceship_num_bullets + (int)(Runtime.spaceship_Maxspeed - default_stat.spaceship_Maxspeed) + Runtime.upgr_PacmanEffect;
 	}
 
@@ -298,8 +310,8 @@ void gameLoop() {
 }
 
 /**
-* black screen and user input
-*/
+ * black screen and user input
+ */
 void deathLoop() {
 
 	BeginDrawing();
@@ -319,7 +331,7 @@ void deathLoop() {
 		return;
 	}
 
-	if (WindowShouldClose()) {
+	if (ShouldExit()) {
 		Runtime.close = true;
 		save();
 		return;
@@ -327,15 +339,15 @@ void deathLoop() {
 }
 
 /**
-* Quick shortcut to spawn a random enemy in the top of the map
-*/
+ * Quick shortcut to spawn a random enemy in the top of the map
+ */
 void spawnEnemies() {
 	addEnemies({(float)(rand() % (screenWidth - 31)), (float)(rand() % 40), 31.0, 31.0});
 }
 
 /**
-* Add the given enemy in the first spot available and set its health
-*/
+ * Add the given enemy in the first spot available and set its health
+ */
 void addEnemies(Rectangle coords) {
 
 	FOR(MAX_ENEMY) {
@@ -349,8 +361,9 @@ void addEnemies(Rectangle coords) {
 }
 
 /**
-* Add the given bullet in the first spot available type is needed for different sources of bullet, spaceship or enemy, -1 spaceship, n the index of enemy
-*/
+ * Add the given bullet in the first spot available
+ * n is the index of the enemy who shoot it, -1 if it was shot by the main spaceship
+ */
 void addBullet(Vector4 bullet, int n) {
 
 	if (n == -1) {
@@ -371,8 +384,8 @@ void addBullet(Vector4 bullet, int n) {
 }
 
 /**
-* Render all active bullets
-*/
+ * Render all active bullets
+ */
 void renderBullets() {
 
 	FOR(MAX_BULLETS) {
@@ -389,8 +402,8 @@ void renderBullets() {
 }
 
 /**
-* Set the initial value for all the used arrays
-*/
+ * Set the initial value for all the used arrays
+ */
 void resetArrays() {
 
 	FOR(MAX_BULLETS) {
@@ -401,21 +414,22 @@ void resetArrays() {
 
 	FOR(MAX_ENEMY) {
 
-		e_health[i] = 0;
-		enemies[i]	= DefaultShip;
+		e_health[i]	  = 0;
+		e_coolDown[i] = static_cast<char>(default_stat.e_fireCoolDown);
+		enemies[i]	  = DefaultShip;
 	}
 }
 
 /**
-* Reset all the stats and upgrades
-*/
+ * Reset all the stats and upgrades
+ */
 void resetStats() {
 	Runtime = default_stat;
 }
 
 /**
-* Move, if they exist, spaceship bullets and enemy bullets
-*/
+ * Move, if they exist, spaceship bullets and enemy bullets
+ */
 void moveBullets() {
 
 	// move bullets
@@ -429,9 +443,9 @@ void moveBullets() {
 			bullets[i].x += bullets[i].z;
 			bullets[i].y += bullets[i].w;
 
-			// if it goes offscreen far eliminate it
+			// if it goes offscreen eliminate it
 			if (bullets[i].x < 0 || bullets[i].x > screenWidth || bullets[i].y < 0 || bullets[i].y > screenHeight) {
-				bullets[i] = {-1, -1, 0, 0};
+				bullets[i] = DefaultBullet;
 			}
 		}
 
@@ -443,17 +457,17 @@ void moveBullets() {
 			e_bullets[i].x += e_bullets[i].z;
 			e_bullets[i].y += e_bullets[i].w;
 
-			// if it goes too far eliminate it
+			// if it goes offscreen eliminate it
 			if (e_bullets[i].x < 0 || e_bullets[i].x > screenWidth || e_bullets[i].y < 0 || e_bullets[i].y > screenHeight) {
-				e_bullets[i] = {-1, -1, 0, 0};
+				e_bullets[i] = DefaultBullet;
 			}
 		}
 	}
 }
 
 /**
-* move the enemies down the screen
-*/
+ * move the enemies down the screen
+ */
 void moveEnemies() {
 	// move enemies
 	FOR(MAX_ENEMY) {
@@ -465,12 +479,12 @@ void moveEnemies() {
 
 			// and remove it if it goes offscreen or is dead
 			if (e_health[i] <= 0) {
-				enemies[i] = {-40, -40, 0, 0};
+				enemies[i] = DefaultShip;
 				Runtime.score += 10;
 			}
 
 			if (enemies[i].y > screenHeight) {
-				enemies[i] = {-40, -40, 0, 0};
+				enemies[i] = DefaultShip;
 				Runtime.score -= 50;
 			}
 		}
@@ -478,8 +492,8 @@ void moveEnemies() {
 }
 
 /**
-* Check collision between bullets, enemies and spaceship. the decrease health/spawn upgrades
-*/
+ * Check collision between bullets, enemies and spaceship. the decrease health/spawn upgrades
+ */
 void checkBulletsCollision() {
 
 	// -------------------------------------------------------------------------------------------- enemy ship collision
@@ -488,12 +502,16 @@ void checkBulletsCollision() {
 	Vector4 linebullet, linenemy;
 	Vector2 intersect_point;
 	for (int j = 0; j < MAX_ENEMY; j++) {
-		if (enemies[j].x != -40) { // restrict the field searched by checking if the enemy is active
+
+		// if the enemy is visible
+		if (enemies[j].x != -40) {
 
 			FOR(MAX_BULLETS) {
-				if (bullets[i].x != -1 && bullets[i].y != -1 && e_health[j] > 0) { // prevent wasting bullet on corpses and check only for active bullets
+				// if the bullet exist and if the enemy is alive
+				if (bullets[i].x != -1 && bullets[i].y != -1 && e_health[j] > 0) {
 
-					for (int k = 0; k < 2; k++) { // check collision for both diagonals
+					// check collision for both diagonals
+					for (int k = 0; k < 2; k++) {
 
 						if (k == 0) {
 							// diagonal 1
@@ -507,13 +525,14 @@ void checkBulletsCollision() {
 
 						intersect_point = intersection(linebullet, linenemy);
 
-						if (intersect_point.x != -1) { // if something collided
+						// if something collided
+						if (intersect_point.x != -1) {
 
 							bullets[i] = DefaultBullet; // delete bullet
 							e_health[j]--;				// inflict damage
 
-							// drop upgrades
-							// 6% drop rate and check if the enemy is dead
+							// drop upgrades if the enemy is dead
+							// 20% drop rate and check if the enemy is dead
 							if (rand() % 100 < 20 && e_health[j] <= 0) {
 								Runtime.upgrade_box = {enemies[j].x, enemies[j].y, enemies[j].width, enemies[j].height}; // drop upgrade at enemy old position
 								temp				= rand() % 100;														 // decide which upgrade
@@ -536,8 +555,14 @@ void checkBulletsCollision() {
 	// -------------------------------------------------------------------------------------------- spaceship collision
 
 	// i don't need to recalculate these for each bullet, i calculate once per frame
-	Vector4 linespace[2] = {{Runtime.spaceship_box.x, Runtime.spaceship_box.y + Runtime.spaceship_box.height, Runtime.spaceship_box.x + Runtime.spaceship_box.width, Runtime.spaceship_box.y},	// linespace1
-							{Runtime.spaceship_box.x, Runtime.spaceship_box.y, Runtime.spaceship_box.x + Runtime.spaceship_box.width, Runtime.spaceship_box.y + Runtime.spaceship_box.height}}; // linespace2
+	Vector4 linespace[2] = {{Runtime.spaceship_box.x,
+							 Runtime.spaceship_box.y + Runtime.spaceship_box.height,
+							 Runtime.spaceship_box.x + Runtime.spaceship_box.width,
+							 Runtime.spaceship_box.y}, // linespace1
+
+							{Runtime.spaceship_box.x,
+							 Runtime.spaceship_box.y,
+							 Runtime.spaceship_box.x + Runtime.spaceship_box.width, Runtime.spaceship_box.y + Runtime.spaceship_box.height}}; // linespace2
 
 	FOR(MAX_BULLETS) {
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
@@ -563,9 +588,10 @@ void checkBulletsCollision() {
 }
 
 /**
-* Check collisions between spaceship and upgrades, and spaceships with enemies
-*/
+ * Check collisions between spaceship and upgrades, and spaceships with enemies
+ */
 void checkEntitiesCollisions() {
+
 	// check collision with upgrades
 	if (CheckCollisionRecs(Runtime.upgrade_box, Runtime.spaceship_box)) {
 
@@ -596,42 +622,46 @@ void checkEntitiesCollisions() {
 			break;
 		}
 
-		Runtime.upgrade_box = {-40, -40, 0, 0}; // delete upgrade
+		Runtime.upgrade_box = DefaultShip; // delete upgrade
 	}
 }
 
 /**
-* every enemy shoot at the spaceship randomly,
-*/
+ * every enemy shoot at the spaceship randomly,
+ */
 void enemyAI() {
 	// enemy AI
 	FOR(MAX_ENEMY) {
 		// check if the enemy exist and i put i little bit of RNG
-		if (enemies[i].x != -40 && e_health[i] >= 0 && (rand() % 8) == 1) {
+		if (enemies[i].x != -40 && e_health[i] >= 0) {
+			if (e_coolDown[i] <= 0 && (rand() % 8) == 1) {
 
-			// distance from spaceship
-			float distx = (enemies[i].x + 15) - (Runtime.spaceship_box.x + 15);
-			float disty = (enemies[i].y + 30) - (Runtime.spaceship_box.y + 15);
+				// distance from spaceship
+				float distx = (enemies[i].x + 15) - (Runtime.spaceship_box.x + 15);
+				float disty = (enemies[i].y + 30) - (Runtime.spaceship_box.y + 15);
 
-			// total distance
-			double num = pow(distx, 2) + pow(disty, 2);
+				// total distance
+				double num = pow(distx, 2) + pow(disty, 2);
 
-			// i need to reduce the distance to a maximun of 12 togheter, using pitagora
-			// the formula is this
-			float mult = (float)((10 * sqrt(num)) / num);
-			float movx = distx * mult * -1;
-			float movy = disty * mult * -1;
+				// i need to reduce the distance to a maximun of 12 togheter, using pitagora
+				// the formula is this
+				float mult = (float)((10 * sqrt(num)) / num);
+				float movx = distx * mult * -1;
+				float movy = disty * mult * -1;
 
-			Vector4 bullet = {enemies[i].x + 15, enemies[i].y + enemies[i].height, movx, movy};
+				Vector4 bullet = {enemies[i].x + 15, enemies[i].y + enemies[i].height, movx, movy};
 
-			addBullet(bullet, i);
+				addBullet(bullet, i);
+				e_coolDown[i] = static_cast<char>(default_stat.e_fireCoolDown);
+			}
+			e_coolDown[i]--;
 		}
 	}
 }
 
 /**
-* Move entities, remove them and check the interaction between them
-*/
+ * Move entities, remove them and check the interaction between them
+ */
 void physics() {
 
 	// -------------------------------------------------------------------------------------------------------------- Move Entities
@@ -649,13 +679,13 @@ void physics() {
 }
 
 /**
-* Fire the amount, given by the var spaceship_num_bullets, of bullets with the correct angle
-*/
+ * Fire the amount, given by the var spaceship_num_bullets, of bullets with the correct angle
+ */
 void fireBullets() {
 
 	float step = 0.5;
 
-	float counter = (float)((Runtime.spaceship_num_bullets / 2.f) - step);
+	float counter = (static_cast<float>(Runtime.spaceship_num_bullets) / 2.f - step);
 	for (int i = 0; i < Runtime.spaceship_num_bullets; i++) {
 		addBullet({Runtime.spaceship_box.x + spaceship_width / 2, Runtime.spaceship_box.y, counter, -12}, -1);
 
@@ -664,8 +694,8 @@ void fireBullets() {
 }
 
 /**
-* Teleport the spaceship at the opposite side of the screen
-*/
+ * Teleport the spaceship at the opposite side of the screen
+ */
 void pacmanEffect(Texture sprite) {
 	if (Runtime.upgr_PacmanEffect) {
 		if (Runtime.spaceship_box.x < 0) {
@@ -715,8 +745,8 @@ void pacmanEffect(Texture sprite) {
 }
 
 /**
-* Return the point of intersection between two line defined by two points
-*/
+ * Return the point of intersection between two line defined by two points
+ */
 Vector2 intersection(Vector4 line1, Vector4 line2) {
 
 	// explanation at https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line_segment
@@ -745,8 +775,8 @@ Vector2 intersection(Vector4 line1, Vector4 line2) {
 }
 
 /**
-* Save the score and the name of the player in a json
-*/
+ * Save the score and the name of the player in a json
+ */
 void save() {
 
 	SetMouseCursor(MOUSE_CURSOR_IBEAM);
@@ -784,7 +814,7 @@ void save() {
 			name[nameIndex] = '\0';
 		}
 
-		if (WindowShouldClose()) {
+		if (ShouldExit()) {
 			Runtime.close = true;
 			return;
 		}
@@ -806,5 +836,5 @@ void save() {
 
 	std::ofstream oHiScores("./res/HiScores.json");
 
-	oHiScores << std::setw(4) << j << std::endl;
+	oHiScores << std::setfill('\t') << std::setw(1) << j << std::endl;
 }
