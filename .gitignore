@@ -2,3 +2,4 @@
 *.exe
 obj/*
 files_hash.txt
+bin/res/HiScores.json
