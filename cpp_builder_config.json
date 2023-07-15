@@ -1,42 +1,44 @@
 {
-	"projectDir": ".",
-	"exeName": "Game.bin",
-	"compilerExe" : "g++",
-	"linkerExe": "g++",
-	"Directories": {
-		"includeDir": [
+	"scripts" : {
+	},
+	"compiler": {
+		"compiler_style": "gcc",
+		"compiler_exe": "g++",
+		"linker_exe": "g++"
+	},
+	
+	"directories": {
+		"project_dir": ".",
+		"exe_path_name": "bin/Game.bin",
+		"include_dirs": [
 			"include",
 			"ext"
 		],
-		"sourceDir": [
+		"source_dirs": [
 			"src"
 		],
-		"libraryDir": [
-			"ext/raylib/lib/debug"
-		],
-		"objectsDir": "objs",
-		"exeDir": "bin"
+		"temp_dir": "obj"
 	},
-	"libraries": {
-		"Debug": [
-			"raylib",
-			"dl",
-			"pthread"
+
+	"debug": {
+		"compiler_args": "-g3 -std=c++2a -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra -fsanitize=address -fsanitize=leak",
+		"linker_args": "-fsanitize=address -fsanitize=leak",
+		"libraries_dirs": [
 		],
-		"Release": [
+		"libraries_names": [
 			"raylib",
 			"dl",
 			"pthread"
 		]
+
 	},
-	"Arguments": {
-		"Debug": {
-			"Compiler": "-g3 -std=c++2a -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
-			"Linker": "-g" 
-		},
-		"Release": {
-			"Compiler": "-O2 -D_NDEBUG -std=c++2a",
-			"Linker": "-s"
-		}
+
+	"release": {
+		"compiler_args": "-g3 -std=c++2a -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
+		"linker_args": "",
+		"libraries_dirs": [
+		],
+		"libraries_names": [
+		]
 	}
 }

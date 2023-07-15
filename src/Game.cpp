@@ -6,9 +6,9 @@
  * TODO vfx
  * TODO fix enemy firing
  **/
-#include "raylib/include/raylib.h"
+#include "raylib.h"
 
-#include "json/json.hpp"
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
