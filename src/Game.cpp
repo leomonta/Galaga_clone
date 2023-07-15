@@ -7,6 +7,7 @@
  * TODO fix enemy firing
  **/
 #include "raylib/include/raylib.h"
+
 #include "json/json.hpp"
 
 using json = nlohmann::json;
@@ -21,9 +22,9 @@ using json = nlohmann::json;
 
 #define FOR(x) for (int i = 0; i < x; i++)
 
-#define MAX_BULLETS		1000
-#define MAX_ENEMY		500
-#define MAX_STAR		100
+#define MAX_BULLETS     1000
+#define MAX_ENEMY       500
+#define MAX_STAR        100
 #define MAX_LENGHT_NAME 6
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
@@ -32,33 +33,33 @@ using json = nlohmann::json;
 #define DefaultStar \
 	{ -1, -1, -1, -1 }
 
-#define UNIFORM_LOC_LIGHT_POS 26 // last raylib loc is 25
-#define UNIFORM_NAME_LIGHT_POS "lightPos" 
+#define ATTRIB_LOC_LIGHT_POS  26 // last raylib loc is 25
+#define ATTRIB_NAME_LIGHT_POS "lightPos"
 // drawing loops
 void gameLoop();
 void deathLoop();
 
 // Each function should be small and execute only what it has to
-void	spawnEnemies();
-void	addEnemies(Rectangle coords);
-void	addBullet(Vector4 bullet, int n);
-void	renderBullets();
-void	resetArrays();
-void	resetStats();
-void	moveBullets();
-void	moveEnemies();
-void	checkBulletsCollision();
-void	checkEntitiesCollisions();
-void	enemyAI();
-void	physics();
-void	fireBullets();
-void	pacmanEffect(Texture sprite);
+void    spawnEnemies();
+void    addEnemies(Rectangle coords);
+void    addBullet(Vector4 bullet, int n);
+void    renderBullets();
+void    resetArrays();
+void    resetStats();
+void    moveBullets();
+void    moveEnemies();
+void    checkBulletsCollision();
+void    checkEntitiesCollisions();
+void    enemyAI();
+void    physics();
+void    fireBullets();
+void    pacmanEffect(Texture sprite);
 Vector2 intersection(Vector4 line1, Vector4 line2);
-void	save();
-void	fillStars();
-void	randomStar(int index);
-void	renderStars();
-void	moveStars();
+void    save();
+void    fillStars();
+void    randomStar(int index);
+void    renderStars();
+void    moveStars();
 
 // The fist two values represent the coordinates, the latter two the accelleration
 Vector4 bullets[MAX_BULLETS];
@@ -69,53 +70,53 @@ Rectangle enemies[MAX_ENEMY];
 
 // other enemies stats
 char e_coolDown[MAX_ENEMY];
-int	 e_health[MAX_ENEMY];
+int  e_health[MAX_ENEMY];
 
-// x, y, z, 	w
-// x, y, speed, type
-Vector4 stars[MAX_STAR];
+// x, y, z,
+// x, y, speed
+// the type is deducted from the last number of the x coord
+// type = x % 3
+Vector3 stars[MAX_STAR];
 
 // Runtime values that are gonna change
 struct RuntimeVals {
 	// spaceship stats
-	Rectangle spaceship_box			= {400, 800, 31, 31};
-	float	  spaceship_speed		= 4.0f;
-	int		  spaceship_health		= 10;
-	int		  spaceship_num_bullets = 1;
-	float	  spaceship_Maxspeed	= 4.0f;
-	int		  fireCoolDown			= 5;
-	int		  e_fireCoolDown		= 10;
-	bool	  upgr_PacmanEffect		= false;
+	Rectangle spaceship_box         = {400, 800, 31, 31};
+	float     spaceship_speed       = 4.0f;
+	int       spaceship_health      = 10;
+	int       spaceship_num_bullets = 1;
+	float     spaceship_Maxspeed    = 4.0f;
+	int       fireCoolDown          = 5;
+	int       e_fireCoolDown        = 10;
+	bool      upgr_PacmanEffect     = false;
 
-	Rectangle upgrade_box	   = {-40, -40, 31, 31};
-	int		  enemy_spawn_rate = 1; // 10 % base spawn rate per-frame
+	Rectangle upgrade_box      = {-40, -40, 31, 31};
+	int       enemy_spawn_rate = 1; // 10 % base spawn rate per-frame
 	// 0 pacman, 1 speed, 2 bullet
-	int upgrade_type = -1;
+	int upgrade_type           = -1;
 
-	int	 score = 0;
+	int  score = 0;
 	bool close = false; // should close the program
 	bool pause = false; // should pause the game
 } Runtime;
 const RuntimeVals default_stat;
 
-#define spaceship_width	 30
+#define spaceship_width  30
 #define spaceship_height 30
-#define screenWidth		 800
-#define screenHeight	 1000
+#define screenWidth      800
+#define screenHeight     1000
 
 const int fps = 30;
-Texture	  spaceship_sprite;
-Texture	  Enemyship_sprite;
-Texture	  Upgrade_bullet;
-Texture	  Upgrade_speed;
-Texture	  Upgrade_pacman;
-Texture	  RStar;
-Texture	  BStar;
-Texture	  YStar;
-Shader	  starShader;
-Font	  Consolas;
-double	  loopTime;
-int		  exitCount = 0;
+Texture   spaceship_sprite;
+Texture   Enemyship_sprite;
+Texture   Upgrade_bullet;
+Texture   Upgrade_speed;
+Texture   Upgrade_pacman;
+Texture   Star_ATL;
+Shader    starShader;
+Font      Consolas;
+double    loopTime;
+int       exitCount = 0;
 
 /**
  * On Wsl for some reasons there are random keys queued on the middle of the execution, prevent them from closing the game immediatly
@@ -139,16 +140,14 @@ int main(void) {
 
 	spaceship_sprite = LoadTexture("./res/img/ships/spaceship.png");
 	Enemyship_sprite = LoadTexture("./res/img/ships/enemyship.png");
-	Upgrade_bullet	 = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
-	Upgrade_speed	 = LoadTexture("./res/img/upgrades/upgrade_speed.png");
-	Upgrade_pacman	 = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
-	RStar			 = LoadTexture("./res/img/stars/star_red.png");
-	BStar			 = LoadTexture("./res/img/stars/star_blue.png");
-	YStar			 = LoadTexture("./res/img/stars/star_yellow.png");
-	Consolas		 = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
-	starShader		 = LoadShader("./res/shaders/light.vert", "./res/shaders/light.frag");
+	Upgrade_bullet   = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
+	Upgrade_speed    = LoadTexture("./res/img/upgrades/upgrade_speed.png");
+	Upgrade_pacman   = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
+	Star_ATL         = LoadTexture("./res/img/stars/star_atlas.png");
+	Consolas         = LoadFont("/mnt/c/Windows/Fonts/consola.ttf");
+	starShader       = LoadShader("./res/shaders/light.vert", "./res/shaders/light.frag");
 
-	starShader.locs[UNIFORM_LOC_LIGHT_POS] = GetShaderLocation(starShader, UNIFORM_NAME_LIGHT_POS);
+	starShader.locs[ATTRIB_LOC_LIGHT_POS] = GetShaderLocationAttrib(starShader, ATTRIB_NAME_LIGHT_POS);
 
 	HideCursor();
 	// Loading textures
@@ -159,10 +158,10 @@ int main(void) {
 
 	resetStats();
 	SetTargetFPS(fps); // Set our game to run at given frames-per-second
-					   //-------------------------------------------------------------------------------------- End initialization
+	                   //-------------------------------------------------------------------------------------- End initialization
 
-	auto	  prev = std::chrono::high_resolution_clock::now();
-	auto	  now  = std::chrono::high_resolution_clock::now();
+	auto      prev = std::chrono::high_resolution_clock::now();
+	auto      now  = std::chrono::high_resolution_clock::now();
 	long long diff; // previous and current time in ms
 
 	// repeat loop
@@ -227,9 +226,7 @@ int main(void) {
 	UnloadTexture(Upgrade_bullet);
 	UnloadTexture(Upgrade_pacman);
 	UnloadTexture(Upgrade_speed);
-	UnloadTexture(RStar);
-	UnloadTexture(BStar);
-	UnloadTexture(YStar);
+	UnloadTexture(Star_ATL);
 	UnloadShader(starShader);
 	UnloadFont(Consolas);
 
@@ -332,9 +329,9 @@ void gameLoop() {
 
 	// Draw spaceship stats on the screen
 	std::string text = "Bullets: " + std::to_string(Runtime.spaceship_num_bullets);
-	text += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
-	text += "\n Health: " + std::to_string(Runtime.spaceship_health);
-	text += "\n Score: " + std::to_string(Runtime.score);
+	text             += "\n Speed: " + std::to_string((int)(Runtime.spaceship_Maxspeed));
+	text             += "\n Health: " + std::to_string(Runtime.spaceship_health);
+	text             += "\n Score: " + std::to_string(Runtime.score);
 	DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
 
 	EndDrawing();
@@ -386,7 +383,7 @@ void addEnemies(Rectangle coords) {
 	FOR(MAX_ENEMY) {
 
 		if (enemies[i].x == -40 && enemies[i].y == -40) {
-			enemies[i]	= coords;
+			enemies[i]  = coords;
 			e_health[i] = 5;
 			return;
 		}
@@ -441,15 +438,15 @@ void resetArrays() {
 
 	FOR(MAX_BULLETS) {
 
-		bullets[i]	 = DefaultBullet;
+		bullets[i]   = DefaultBullet;
 		e_bullets[i] = DefaultBullet;
 	}
 
 	FOR(MAX_ENEMY) {
 
-		e_health[i]	  = 0;
+		e_health[i]   = 0;
 		e_coolDown[i] = static_cast<char>(default_stat.e_fireCoolDown);
-		enemies[i]	  = DefaultShip;
+		enemies[i]    = DefaultShip;
 	}
 }
 
@@ -512,12 +509,12 @@ void moveEnemies() {
 
 			// and remove it if it goes offscreen or is dead
 			if (e_health[i] <= 0) {
-				enemies[i] = DefaultShip;
+				enemies[i]    = DefaultShip;
 				Runtime.score += 10;
 			}
 
 			if (enemies[i].y > screenHeight) {
-				enemies[i] = DefaultShip;
+				enemies[i]    = DefaultShip;
 				Runtime.score -= 50;
 			}
 		}
@@ -531,7 +528,7 @@ void checkBulletsCollision() {
 
 	// -------------------------------------------------------------------------------------------- enemy ship collision
 
-	int		temp;
+	int     temp;
 	Vector4 linebullet, linenemy;
 	Vector2 intersect_point;
 	for (int j = 0; j < MAX_ENEMY; j++) {
@@ -562,13 +559,13 @@ void checkBulletsCollision() {
 						if (intersect_point.x != -1) {
 
 							bullets[i] = DefaultBullet; // delete bullet
-							e_health[j]--;				// inflict damage
+							e_health[j]--;              // inflict damage
 
 							// drop upgrades if the enemy is dead
 							// 20% drop rate and check if the enemy is dead
 							if (rand() % 100 < 20 && e_health[j] <= 0) {
 								Runtime.upgrade_box = {enemies[j].x, enemies[j].y, enemies[j].width, enemies[j].height}; // drop upgrade at enemy old position
-								temp				= rand() % 100;														 // decide which upgrade
+								temp                = rand() % 100;                                                      // decide which upgrade
 								if (temp < 6) {
 									Runtime.upgrade_type = 0; // pacman
 								} else if (temp < 53) {
@@ -588,14 +585,16 @@ void checkBulletsCollision() {
 	// -------------------------------------------------------------------------------------------- spaceship collision
 
 	// i don't need to recalculate these for each bullet, i calculate once per frame
-	Vector4 linespace[2] = {{Runtime.spaceship_box.x,
-							 Runtime.spaceship_box.y + Runtime.spaceship_box.height,
-							 Runtime.spaceship_box.x + Runtime.spaceship_box.width,
-							 Runtime.spaceship_box.y}, // linespace1
+	Vector4 linespace[2] = {
+	    {Runtime.spaceship_box.x,
+	     Runtime.spaceship_box.y + Runtime.spaceship_box.height,
+	     Runtime.spaceship_box.x + Runtime.spaceship_box.width,
+	     Runtime.spaceship_box.y	                                                                                  }, // linespace1
 
-							{Runtime.spaceship_box.x,
-							 Runtime.spaceship_box.y,
-							 Runtime.spaceship_box.x + Runtime.spaceship_box.width, Runtime.spaceship_box.y + Runtime.spaceship_box.height}}; // linespace2
+	    {Runtime.spaceship_box.x,
+	     Runtime.spaceship_box.y,
+	     Runtime.spaceship_box.x + Runtime.spaceship_box.width, Runtime.spaceship_box.y + Runtime.spaceship_box.height}
+    }; // linespace2
 
 	FOR(MAX_BULLETS) {
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
@@ -608,8 +607,8 @@ void checkBulletsCollision() {
 				if (intersect_point.x != -1) {
 
 					e_bullets[i] = DefaultBullet; // delete bullet
-					Runtime.spaceship_health--;	  // inflict damage
-					break;						  // next bullet
+					Runtime.spaceship_health--;   // inflict damage
+					break;                        // next bullet
 				}
 			}
 
@@ -631,7 +630,7 @@ void checkEntitiesCollisions() {
 		switch (Runtime.upgrade_type) {
 
 		case 0: // pacman upgrade
-			Runtime.score += 500;
+			Runtime.score             += 500;
 			Runtime.upgr_PacmanEffect = true;
 			break;
 
@@ -837,7 +836,7 @@ void save() {
 		EndDrawing();
 
 		if ((character > 0) && (character >= 32) && (character <= 125) && (nameIndex < MAX_LENGHT_NAME)) {
-			name[nameIndex]		= character;
+			name[nameIndex]     = character;
 			name[nameIndex + 1] = '\0';
 			nameIndex++;
 		}
@@ -893,10 +892,7 @@ void randomStar(int index) {
 
 	float speed = static_cast<float>(rand() % 3) + 1.f;
 
-	// 0 or 1 or 2
-	float type = static_cast<float>(rand() % 3);
-
-	stars[index] = {x, y, speed, type};
+	stars[index] = {x, y, speed};
 }
 
 /**
@@ -908,23 +904,38 @@ void renderStars() {
 
 	FOR(MAX_STAR) {
 
-		float lightPos[] = {stars[i].x + 5.f, stars[i].y + 5.f};
-		SetShaderValueV(starShader, starShader.locs[UNIFORM_LOC_LIGHT_POS], &lightPos, SHADER_UNIFORM_FLOAT, 2);
+		// this can be moved to the shader
+		auto type = static_cast<int>(stars[i].x) % 3;
 
 		unsigned char light = static_cast<unsigned char>(stars[i].z * 50);
-		switch (static_cast<int>(stars[i].w)) {
+		Color         col   = {255, 255, 255, light};
+
+		if (type == 0) {
+			col = {255, 10, 10, light};
+		} else if (type == 1) {
+			col = {10, 10, 255, light};
+		} else if (type == 2) {
+			col = {128, 128, 10, light};
+		}
+
+		auto posX = static_cast<int>(stars[i].x);
+		auto posY = static_cast<int>(stars[i].y);
+
+		DrawTexture(Star_ATL, posX, posY, col);
+
+		/*switch (type) {
 		case 0:
-			DrawTexture(RStar, stars[i].x, stars[i].y, {255, 10, 10, light});
-			break;
+		    DrawTexture(RStar, stars[i].x, stars[i].y, {255, 10, 10, light});
+		    break;
 
 		case 1:
-			DrawTexture(BStar, stars[i].x, stars[i].y, {10, 10, 255, light});
-			break;
+		    DrawTexture(BStar, stars[i].x, stars[i].y, {10, 10, 255, light});
+		    break;
 
 		case 2:
-			DrawTexture(YStar, stars[i].x, stars[i].y, {128, 128, 10, light});
-			break;
-		}
+		    DrawTexture(YStar, stars[i].x, stars[i].y, {128, 128, 10, light});
+		    break;
+		}*/
 	}
 
 	EndShaderMode();

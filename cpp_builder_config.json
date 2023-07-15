@@ -2,6 +2,7 @@
 	"projectDir": ".",
 	"exeName": "Game.bin",
 	"compilerExe" : "g++",
+	"linkerExe": "g++",
 	"Directories": {
 		"includeDir": [
 			"include",
