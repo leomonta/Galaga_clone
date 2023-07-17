@@ -223,7 +223,10 @@ void pauseLoop() {
 
 	while (true) {
 
-		PollInputEvents();
+		// poll inputs and keep the frame time usable
+		BeginDrawing();
+		EndDrawing();
+
 
 		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
 			Runtime.close = true;
@@ -236,6 +239,8 @@ void pauseLoop() {
 			break;
 		}
 	}
+
+	// get rid of the lingering <Esc> / <P> pressed
 	PollInputEvents();
 }
 
@@ -351,7 +356,7 @@ void gameLoop() {
 		text += "\n Health: " + std::to_string(Runtime.spaceship_health);
 		text += "\n Score: " + std::to_string(Runtime.score);
 		DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
-		// DrawFPS(100, 10);
+		DrawFPS(200, 10);
 
 		notification::renderNotifications();
 	}
