@@ -19,11 +19,11 @@ using json = nlohmann::json;
 #include <string>
 #include <time.h> // for random numbers
 
-#define FOR(x) for (int i = 0; i < x; i++)
+#define FOR(x) for (int i = 0; i < x; ++i)
 
-#define UPGRADE_PACMAN   0
-#define UPGRADE_MOVEMENT 1
-#define UPGRADE_BULLET   2
+#define UPGRADE_PACMAN 0
+#define UPGRADE_SPEED  1
+#define UPGRADE_BULLET 2
 
 #define MAX_SPEED  15
 #define MAX_BULLET 10
@@ -34,7 +34,17 @@ using json = nlohmann::json;
 #define MAX_STAR          100
 #define MAX_LENGHT_NAME   6
 
+#define BULLET_SPAWN_WEIGHT 0.5
+#define PACMAN_SPAWN_WEIGHT 2
+#define SPEED_SPAWN_WEIGHT  0.7
+
 #define DEFAULT_SPEED_MULT 15.f
+#define ENEMY_SPEED_MULT   10.f
+#define STAR_SPEED_MULT    3.f
+#define BULLET_SPEED_MULT  20.f
+
+#define SCREEN_BG \
+	{ 0, 0, 40, 255 }
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
 #define DefaultShip \
@@ -69,6 +79,8 @@ void    randomStar(int index);
 void    renderStars();
 void    moveStars();
 long    getCurrMs();
+void    pickRandomUpgrade(int enemyIndex);
+bool    bulletEnemyCollision(int bulletIndex, int enemyIndex);
 
 namespace notification {
 
@@ -108,7 +120,7 @@ struct RuntimeVals {
 	bool      upgr_PacmanEffect     = false;
 
 	Rectangle upgrade_box      = {-40, -40, 31, 31};
-	int       enemy_spawn_rate = 1; // 10 % base spawn rate per-frame
+	float     enemy_spawn_rate = 1; // 10 % base spawn rate per-frame
 	// 0 pacman, 1 speed, 2 bullet
 	int upgrade_type           = -1;
 
@@ -257,6 +269,12 @@ void gameLoop() {
 		return;
 	}
 
+	// Pause Button
+	if (IsKeyPressed(KEY_P) || IsKeyPressed(KEY_ESCAPE)) {
+		Runtime.pause = true;
+		return;
+	}
+
 	auto deltaTime = GetFrameTime();
 
 	// limit the speed to the maximum possible as base
@@ -268,7 +286,7 @@ void gameLoop() {
 		Runtime.spaceship_speed /= 2;
 
 		auto now = getCurrMs();
-		if (now - Runtime.lastShot <= Runtime.fireCoolDown) {
+		if (now - Runtime.lastShot >= Runtime.fireCoolDown) {
 			fireBullets();
 			Runtime.lastShot = now;
 		}
@@ -286,21 +304,16 @@ void gameLoop() {
 		Runtime.spaceship_box.y += static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
 	}
 
-	// Pause Button
-	if (IsKeyPressed(KEY_P) || IsKeyPressed(KEY_ESCAPE)) {
-		Runtime.pause = true;
-		return;
-	}
-
 	// more upgrade, more enemies
-	int spawn = int(rand()) % 10000;
+	int spawn = int(rand()) % 30000;
 	if (spawn < int(Runtime.enemy_spawn_rate)) {
 		spawnEnemies();
 		Runtime.enemy_spawn_rate = default_stat.enemy_spawn_rate;
 	} else {
 		// increase the probablity of spawning if enemy did not spawn
-		//							0.1 for every bullet upgrade,	for every speed upgrade,											  and for the pacman effect
-		Runtime.enemy_spawn_rate += Runtime.spaceship_num_bullets + (int)(Runtime.spaceship_Maxspeed - default_stat.spaceship_Maxspeed) + Runtime.upgr_PacmanEffect;
+		Runtime.enemy_spawn_rate += Runtime.spaceship_num_bullets * BULLET_SPAWN_WEIGHT +
+		                            (Runtime.spaceship_Maxspeed - default_stat.spaceship_Maxspeed) * SPEED_SPAWN_WEIGHT +
+		                            Runtime.upgr_PacmanEffect * PACMAN_SPAWN_WEIGHT;
 	}
 
 	// manage objects movement and interactions
@@ -317,7 +330,7 @@ void gameLoop() {
 	BeginTextureMode(frameBuffer);
 	{
 		// draw screen
-		ClearBackground({0, 0, 40, 255});
+		ClearBackground(SCREEN_BG);
 
 		pacmanEffect(spaceship_sprite);
 
@@ -491,6 +504,8 @@ void resetStats() {
  */
 void moveBullets() {
 
+	auto deltaTime = GetFrameTime();
+
 	// move bullets
 	FOR(MAX_BULLETS) {
 
@@ -499,8 +514,8 @@ void moveBullets() {
 		if (bullets[i].x != -1 && bullets[i].y != -1) {
 
 			// advance the bullet
-			bullets[i].x += bullets[i].z * GetFrameTime();
-			bullets[i].y += bullets[i].w * GetFrameTime();
+			bullets[i].x += bullets[i].z * deltaTime * BULLET_SPEED_MULT;
+			bullets[i].y += bullets[i].w * deltaTime * BULLET_SPEED_MULT;
 
 			// if it goes offscreen eliminate it
 			if (bullets[i].x < 0 || bullets[i].x > screenWidth || bullets[i].y < 0 || bullets[i].y > screenHeight) {
@@ -513,8 +528,8 @@ void moveBullets() {
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
 
 			// advance the bullet
-			e_bullets[i].x += e_bullets[i].z * GetFrameTime();
-			e_bullets[i].y += e_bullets[i].w * GetFrameTime();
+			e_bullets[i].x += e_bullets[i].z * deltaTime * BULLET_SPEED_MULT;
+			e_bullets[i].y += e_bullets[i].w * deltaTime * BULLET_SPEED_MULT;
 
 			// if it goes offscreen eliminate it
 			if (e_bullets[i].x < 0 || e_bullets[i].x > screenWidth || e_bullets[i].y < 0 || e_bullets[i].y > screenHeight) {
@@ -528,6 +543,8 @@ void moveBullets() {
  * move the enemies down the screen
  */
 void moveEnemies() {
+
+	auto deltaTime = GetFrameTime();
 	// move enemies
 	FOR(MAX_ENEMY) {
 
@@ -536,7 +553,7 @@ void moveEnemies() {
 			continue;
 		}
 		// move the enemy
-		enemies[i].y += 1 * GetFrameTime();
+		enemies[i].y += ENEMY_SPEED_MULT * deltaTime;
 
 		// and remove it if it goes offscreen or is dead
 		if (e_health[i] <= 0) {
@@ -559,7 +576,6 @@ void checkBulletsCollision() {
 
 	// -------------------------------------------------------------------------------------------- enemy ship collision
 
-	int     temp;
 	Vector4 lineBullet;
 	Vector2 intersect_point;
 
@@ -567,55 +583,18 @@ void checkBulletsCollision() {
 	for (int j = 0; j < MAX_ENEMY; j++) {
 
 		// if the enemy is visible
-		if (enemies[j].x == -40) {
+		if (enemies[j].x == -40 || e_health[j] <= 0) {
 			continue;
 		}
 
 		FOR(MAX_BULLETS) {
-			// if the bullet exist and if the enemy is alive
+			// if the bullet exist and if the enemy is still alive after being eventually hit
 			if (bullets[i].x == -1 || bullets[i].y == -1 || e_health[j] <= 0) {
 				continue;
 			}
 
-			// check collision for both diagonals
-			for (int k = 0; k < 2; k++) {
-
-				Vector4 lineEnemy;
-
-				if (k == 0) {
-					// diagonal 1
-					lineEnemy = {enemies[j].x + enemies[j].width / 2, enemies[j].y, enemies[j].x + enemies[j].width / 2, enemies[j].y + enemies[j].height};
-				} else {
-					// diagonal 2
-					lineEnemy = {enemies[j].x, enemies[j].y + enemies[j].height / 2, enemies[j].x + enemies[j].width, enemies[j].y + enemies[j].height / 2};
-				}
-
-				lineBullet = {bullets[i].x, bullets[i].y, bullets[i].x + (bullets[i].z * 2), bullets[i].y + (bullets[i].w * 2)};
-
-				intersect_point = intersection(lineBullet, lineEnemy);
-
-				// if something collided
-				if (intersect_point.x == -1) {
-					continue;
-				}
-
-				bullets[i] = DefaultBullet; // delete bullet
-				e_health[j]--;              // inflict damage
-
-				// drop upgrades if the enemy is dead
-				// 20% drop rate and check if the enemy is dead
-				if (rand() % 100 < 20 && e_health[j] <= 0) {
-					Runtime.upgrade_box = {enemies[j].x, enemies[j].y, enemies[j].width, enemies[j].height}; // drop upgrade at enemy old position
-					temp                = rand() % 100;                                                      // decide which upgrade
-					if (temp < 6) {
-						Runtime.upgrade_type = 0; // pacman
-					} else if (temp < 53) {
-						Runtime.upgrade_type = 1; // speed
-					} else if (temp < 100) {
-						Runtime.upgrade_type = 2; // bullet
-					}
-				}
-				break; // next bullet
+			if (bulletEnemyCollision(i, j)) {
+				return; // only one bullet per frame
 			}
 		}
 	}
@@ -627,32 +606,34 @@ void checkBulletsCollision() {
 	    {Runtime.spaceship_box.x,
 	     Runtime.spaceship_box.y + Runtime.spaceship_box.height,
 	     Runtime.spaceship_box.x + Runtime.spaceship_box.width,
-	     Runtime.spaceship_box.y	                                                                                  }, // linespace1
+	     Runtime.spaceship_box.y                               }, // linespace 1
 
 	    {Runtime.spaceship_box.x,
 	     Runtime.spaceship_box.y,
-	     Runtime.spaceship_box.x + Runtime.spaceship_box.width, Runtime.spaceship_box.y + Runtime.spaceship_box.height}
-    }; // linespace2
+	     Runtime.spaceship_box.x + Runtime.spaceship_box.width,
+	     Runtime.spaceship_box.y + Runtime.spaceship_box.height}  // linespace 2
+	};
 
 	FOR(MAX_BULLETS) {
-		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
+		if (e_bullets[i].x == -1) {
+			continue;
+		}
 
-			for (int k = 0; k < 2; k++) { // check collision for both diagonals
-				lineBullet = {e_bullets[i].x, e_bullets[i].y, e_bullets[i].x + (e_bullets[i].z * 2), e_bullets[i].y + (e_bullets[i].w * 2)};
+		for (int k = 0; k < 2; k++) { // check collision for both diagonals
+			lineBullet = {e_bullets[i].x, e_bullets[i].y, e_bullets[i].x + (e_bullets[i].z * 2), e_bullets[i].y + (e_bullets[i].w * 2)};
 
-				intersect_point = intersection(lineBullet, linespace[k]);
+			intersect_point = intersection(lineBullet, linespace[k]);
 
-				if (intersect_point.x != -1) {
+			if (intersect_point.x != -1) {
 
-					e_bullets[i] = DefaultBullet; // delete bullet
-					Runtime.spaceship_health--;   // inflict damage
-					break;                        // next bullet
-				}
+				e_bullets[i] = DefaultBullet; // delete bullet
+				Runtime.spaceship_health--;   // inflict damage
+				break;                        // next bullet
 			}
+		}
 
-			if (Runtime.spaceship_health <= 0) {
-				return;
-			}
+		if (Runtime.spaceship_health <= 0) {
+			return;
 		}
 	}
 }
@@ -675,7 +656,7 @@ void checkEntitiesCollisions() {
 			Runtime.upgr_PacmanEffect = true;
 			break;
 
-		case UPGRADE_MOVEMENT:
+		case UPGRADE_SPEED:
 			notification::notify("+ 200", pos);
 			Runtime.score += 200;
 			Runtime.spaceship_Maxspeed++;
@@ -935,7 +916,7 @@ void randomStar(int index) {
 	float x = static_cast<float>(rand() % screenWidth);
 	float y = static_cast<float>(rand() % screenHeight);
 
-	float speed = static_cast<float>(rand() % 3) + 1.f;
+	float speed = static_cast<float>(rand() % 3 * STAR_SPEED_MULT) + 1.f;
 
 	stars[index] = {x, y, speed};
 }
@@ -976,8 +957,11 @@ void renderStars() {
  * move the stars by their own speed
  */
 void moveStars() {
+
+	auto deltaTime = GetFrameTime();
+
 	FOR(MAX_STAR) {
-		stars[i].y += stars[i].z * GetFrameTime();
+		stars[i].y += stars[i].z * STAR_SPEED_MULT * deltaTime;
 
 		if (static_cast<int>(stars[i].y) - Star_ATL.height > screenHeight) {
 
@@ -1039,4 +1023,68 @@ void notification::renderNotifications() {
 long getCurrMs() {
 
 	return static_cast<long>(GetTime() * 1000);
+}
+
+void pickRandomUpgrade(int enemyIndex) {
+
+	// drop upgrades if the enemy is dead
+	// 20% drop rate and check if the enemy is dead
+	if (rand() % 100 < 20 && e_health[enemyIndex] <= 0) {
+		Runtime.upgrade_box = {enemies[enemyIndex].x,
+		                       enemies[enemyIndex].y,
+		                       enemies[enemyIndex].width,
+		                       enemies[enemyIndex].height}; // drop upgrade at enemy old position
+
+		auto temp = rand() % 100; // decide which upgrade
+		if (temp < 6) {
+			Runtime.upgrade_type = UPGRADE_PACMAN;
+		} else if (temp < 53) {
+			Runtime.upgrade_type = UPGRADE_SPEED;
+		} else if (temp < 100) {
+			Runtime.upgrade_type = UPGRADE_BULLET;
+		}
+	}
+}
+
+bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
+	// check collision for both diagonals
+	for (int k = 0; k < 2; k++) {
+
+		Vector4 lineEnemy;
+
+		if (k == 0) {
+			// diagonal 1
+			lineEnemy = {enemies[enemyIndex].x + enemies[enemyIndex].width / 2,
+			             enemies[enemyIndex].y,
+			             enemies[enemyIndex].x + enemies[enemyIndex].width / 2,
+			             enemies[enemyIndex].y + enemies[enemyIndex].height};
+		} else {
+			// diagonal 2
+			lineEnemy = {enemies[enemyIndex].x,
+			             enemies[enemyIndex].y + enemies[enemyIndex].height / 2,
+			             enemies[enemyIndex].x + enemies[enemyIndex].width,
+			             enemies[enemyIndex].y + enemies[enemyIndex].height / 2};
+		}
+
+		Vector4 lineBullet = {bullets[bulletIndex].x,
+		                      bullets[bulletIndex].y,
+		                      bullets[bulletIndex].x + (bullets[bulletIndex].z * 2),
+		                      bullets[bulletIndex].y + (bullets[bulletIndex].w * 2)};
+
+		Vector2 intersect_point = intersection(lineBullet, lineEnemy);
+
+		// if something collided
+		if (intersect_point.x == -1) {
+			continue;
+		}
+
+		bullets[bulletIndex] = DefaultBullet; // delete bullet
+		--e_health[enemyIndex];               // inflict damage
+
+		pickRandomUpgrade(enemyIndex);
+
+		return true;
+	}
+
+	return false;
 }
