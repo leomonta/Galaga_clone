@@ -21,11 +21,20 @@ using json = nlohmann::json;
 
 #define FOR(x) for (int i = 0; i < x; i++)
 
+#define UPGRADE_PACMAN   0
+#define UPGRADE_MOVEMENT 1
+#define UPGRADE_BULLET   2
+
+#define MAX_SPEED  15
+#define MAX_BULLET 10
+
 #define MAX_BULLETS       1000
 #define MAX_NOTIFICATIONS 10
 #define MAX_ENEMY         500
 #define MAX_STAR          100
 #define MAX_LENGHT_NAME   6
+
+#define DEFAULT_SPEED_MULT 15.f
 #define DefaultBullet \
 	{ -1, -1, 0, 0 }
 #define DefaultShip \
@@ -89,12 +98,12 @@ Vector3 stars[MAX_STAR];
 struct RuntimeVals {
 	// spaceship stats
 	Rectangle spaceship_box         = {400, 800, 31, 31};
-	float     spaceship_speed       = 4000.0f;
+	int       spaceship_speed       = 4;
 	int       spaceship_health      = 10;
 	int       spaceship_num_bullets = 1;
-	float     spaceship_Maxspeed    = 4000.0f;
-	int       fireCoolDown          = 200; // ms cooldown
-	int       lastShot              = 300; // the time which the last shot was fired form the ship
+	int       spaceship_Maxspeed    = 4;
+	long      fireCoolDown          = 200; // ms cooldown
+	long      lastShot              = 0;   // the time which the last shot was fired form the ship
 	int       e_fireCoolDown        = 10;
 	bool      upgr_PacmanEffect     = false;
 
@@ -121,7 +130,7 @@ struct notifRes {
 #define screenWidth      800
 #define screenHeight     1000
 
-const int       fps = 60;
+int             fps = 60;
 Texture         spaceship_sprite;
 Texture         Enemyship_sprite;
 Texture         Upgrade_bullet;
@@ -140,6 +149,7 @@ int main() {
 	srand((unsigned int)time(0));
 	InitWindow(screenWidth, screenHeight, "Galaga clone by Leonardo");
 
+	// TODO: check if the textures are actually loaded, they return id <= 0 if so
 	spaceship_sprite = LoadTexture("./res/img/ships/spaceship.png");
 	Enemyship_sprite = LoadTexture("./res/img/ships/enemyship.png");
 	Upgrade_bullet   = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
@@ -164,12 +174,6 @@ int main() {
 
 	// repeat loop
 	while (!Runtime.close) {
-
-		// time passed < 1/fps (0.16ms for 60 fps)
-		// if a frame has passed
-		// if (GetFrameTime() < 1000 / fps) {
-		// continue;
-		// }
 
 		notification::tick();
 
@@ -227,7 +231,6 @@ void pauseLoop() {
 		BeginDrawing();
 		EndDrawing();
 
-
 		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
 			Runtime.close = true;
 			break;
@@ -249,14 +252,15 @@ void pauseLoop() {
  */
 void gameLoop() {
 
-	auto deltaTime = GetFrameTime();
-
 	if (WindowShouldClose()) {
 		Runtime.close = true;
 		return;
 	}
 
-	Runtime.spaceship_speed = Runtime.spaceship_Maxspeed * deltaTime;
+	auto deltaTime = GetFrameTime();
+
+	// limit the speed to the maximum possible as base
+	Runtime.spaceship_speed = Runtime.spaceship_Maxspeed;
 
 	// --------------------------------------------------------------------------------- Check Keyboard
 	// fire bullets when spacebar pressed
@@ -272,14 +276,14 @@ void gameLoop() {
 
 	// movement
 	if (IsKeyDown(KEY_RIGHT)) {
-		Runtime.spaceship_box.x += Runtime.spaceship_speed * deltaTime;
+		Runtime.spaceship_box.x += static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
 	} else if (IsKeyDown(KEY_LEFT)) {
-		Runtime.spaceship_box.x -= Runtime.spaceship_speed * deltaTime;
+		Runtime.spaceship_box.x -= static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
 	}
 	if (IsKeyDown(KEY_UP)) {
-		Runtime.spaceship_box.y -= Runtime.spaceship_speed * deltaTime;
+		Runtime.spaceship_box.y -= static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
 	} else if (IsKeyDown(KEY_DOWN)) {
-		Runtime.spaceship_box.y += Runtime.spaceship_speed * deltaTime;
+		Runtime.spaceship_box.y += static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
 	}
 
 	// Pause Button
@@ -665,13 +669,13 @@ void checkEntitiesCollisions() {
 
 		switch (Runtime.upgrade_type) {
 
-		case 0: // pacman upgrade
+		case UPGRADE_PACMAN:
 			notification::notify("+ 500", pos);
 			Runtime.score += 500;
 			Runtime.upgr_PacmanEffect = true;
 			break;
 
-		case 1: // speed upgrade
+		case UPGRADE_MOVEMENT:
 			notification::notify("+ 200", pos);
 			Runtime.score += 200;
 			Runtime.spaceship_Maxspeed++;
@@ -680,7 +684,7 @@ void checkEntitiesCollisions() {
 			}
 			break;
 
-		case 2: // bullet upgrade
+		case UPGRADE_BULLET:
 			notification::notify("+ 200", pos);
 			Runtime.score += 200;
 			Runtime.spaceship_num_bullets++;
@@ -1034,8 +1038,5 @@ void notification::renderNotifications() {
 
 long getCurrMs() {
 
-	timespec clk;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &clk);
-
-	return clk.tv_nsec / 1000000;
+	return static_cast<long>(GetTime() * 1000);
 }
