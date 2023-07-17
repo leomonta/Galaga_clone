@@ -38,10 +38,11 @@ using json = nlohmann::json;
 #define PACMAN_SPAWN_WEIGHT 2
 #define SPEED_SPAWN_WEIGHT  0.7
 
-#define DEFAULT_SPEED_MULT 15.f
-#define ENEMY_SPEED_MULT   10.f
-#define STAR_SPEED_MULT    3.f
-#define BULLET_SPEED_MULT  20.f
+#define MOVEMENT_SPEED_MULT  15.f
+#define ENEMY_SPEED_MULT     10.f
+#define STAR_SPEED_MULT      3.f
+#define BULLET_SPEED_MULT    20.f
+#define DEFAULT_BULLET_SPEED -12.f
 
 #define SCREEN_BG \
 	{ 0, 0, 40, 255 }
@@ -294,14 +295,14 @@ void gameLoop() {
 
 	// movement
 	if (IsKeyDown(KEY_RIGHT)) {
-		Runtime.spaceship_box.x += static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
+		Runtime.spaceship_box.x += static_cast<float>(Runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
 	} else if (IsKeyDown(KEY_LEFT)) {
-		Runtime.spaceship_box.x -= static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
+		Runtime.spaceship_box.x -= static_cast<float>(Runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
 	}
 	if (IsKeyDown(KEY_UP)) {
-		Runtime.spaceship_box.y -= static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
+		Runtime.spaceship_box.y -= static_cast<float>(Runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
 	} else if (IsKeyDown(KEY_DOWN)) {
-		Runtime.spaceship_box.y += static_cast<float>(Runtime.spaceship_speed) * deltaTime * DEFAULT_SPEED_MULT;
+		Runtime.spaceship_box.y += static_cast<float>(Runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
 	}
 
 	// more upgrade, more enemies
@@ -311,9 +312,11 @@ void gameLoop() {
 		Runtime.enemy_spawn_rate = default_stat.enemy_spawn_rate;
 	} else {
 		// increase the probablity of spawning if enemy did not spawn
-		Runtime.enemy_spawn_rate += Runtime.spaceship_num_bullets * BULLET_SPAWN_WEIGHT +
-		                            (Runtime.spaceship_Maxspeed - default_stat.spaceship_Maxspeed) * SPEED_SPAWN_WEIGHT +
-		                            Runtime.upgr_PacmanEffect * PACMAN_SPAWN_WEIGHT;
+		auto inc = Runtime.spaceship_num_bullets * BULLET_SPAWN_WEIGHT +
+		           (Runtime.spaceship_Maxspeed - default_stat.spaceship_Maxspeed) * SPEED_SPAWN_WEIGHT +
+		           Runtime.upgr_PacmanEffect * PACMAN_SPAWN_WEIGHT;
+
+		Runtime.enemy_spawn_rate += static_cast<float>(inc);
 	}
 
 	// manage objects movement and interactions
@@ -414,7 +417,11 @@ void deathLoop() {
  * Quick shortcut to spawn a random enemy in the top of the map
  */
 void spawnEnemies() {
-	addEnemies({(float)(rand() % (screenWidth - 31)), (float)(rand() % 40), 31.0, 31.0});
+	addEnemies(
+	    {(float)(rand() % (screenWidth - Enemyship_sprite.height)),
+	     (float)(rand() % 40),
+	     (float)(Enemyship_sprite.width),
+	     (float)(Enemyship_sprite.height)});
 }
 
 /**
@@ -464,11 +471,19 @@ void renderBullets() {
 
 		if (bullets[i].x != -1 && bullets[i].y != -1) {
 			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
-			DrawLineEx({bullets[i].x, bullets[i].y}, {bullets[i].x + bullets[i].z, bullets[i].y + bullets[i].w}, 2.5, WHITE);
+			DrawLineEx({bullets[i].x,
+			            bullets[i].y},
+			           {bullets[i].x + bullets[i].z,
+			            bullets[i].y + bullets[i].w},
+			           2.5, WHITE);
 		}
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
 			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
-			DrawLineEx({e_bullets[i].x, e_bullets[i].y}, {e_bullets[i].x + e_bullets[i].z, e_bullets[i].y + e_bullets[i].w}, 2.5, YELLOW);
+			DrawLineEx({e_bullets[i].x,
+			            e_bullets[i].y},
+			           {e_bullets[i].x + e_bullets[i].z,
+			            e_bullets[i].y + e_bullets[i].w},
+			           2.5, YELLOW);
 		}
 	}
 }
@@ -620,7 +635,10 @@ void checkBulletsCollision() {
 		}
 
 		for (int k = 0; k < 2; k++) { // check collision for both diagonals
-			lineBullet = {e_bullets[i].x, e_bullets[i].y, e_bullets[i].x + (e_bullets[i].z * 2), e_bullets[i].y + (e_bullets[i].w * 2)};
+			lineBullet = {e_bullets[i].x,
+			              e_bullets[i].y,
+			              e_bullets[i].x + (e_bullets[i].z * 2),
+			              e_bullets[i].y + (e_bullets[i].w * 2)};
 
 			intersect_point = intersection(lineBullet, linespace[k]);
 
@@ -646,7 +664,8 @@ void checkEntitiesCollisions() {
 	// check collision with upgrades
 	if (CheckCollisionRecs(Runtime.upgrade_box, Runtime.spaceship_box)) {
 
-		Vector2 pos = (Vector2){Runtime.upgrade_box.x, Runtime.upgrade_box.y};
+		Vector2 pos = {Runtime.upgrade_box.x,
+		               Runtime.upgrade_box.y};
 
 		switch (Runtime.upgrade_type) {
 
@@ -708,7 +727,10 @@ void enemyAI() {
 			float movx = distx * mult * -1;
 			float movy = disty * mult * -1;
 
-			Vector4 bullet = {enemies[i].x + 15, enemies[i].y + enemies[i].height, movx, movy};
+			Vector4 bullet = {enemies[i].x + enemies[i].width / 2,
+			                  enemies[i].y + enemies[i].height,
+			                  movx,
+			                  movy};
 
 			addBullet(bullet, i);
 			e_coolDown[i] = static_cast<char>(default_stat.e_fireCoolDown);
@@ -747,7 +769,11 @@ void fireBullets() {
 
 	float counter = (static_cast<float>(Runtime.spaceship_num_bullets) / 2.f - step);
 	for (int i = 0; i < Runtime.spaceship_num_bullets; i++) {
-		addBullet({Runtime.spaceship_box.x + spaceship_width / 2, Runtime.spaceship_box.y + spaceship_height / 3, counter, -12}, -1);
+		addBullet({Runtime.spaceship_box.x + spaceship_width / 2,
+		           Runtime.spaceship_box.y + spaceship_height / 3,
+		           counter,
+		           DEFAULT_BULLET_SPEED},
+		          -1);
 
 		counter -= 1;
 	}
@@ -759,28 +785,28 @@ void fireBullets() {
 void pacmanEffect(Texture sprite) {
 	if (Runtime.upgr_PacmanEffect) {
 		if (Runtime.spaceship_box.x < 0) {
-			if (Runtime.spaceship_box.x + 15 < 0) {
+			if (Runtime.spaceship_box.x + spaceship_width / 2 < 0) {
 				Runtime.spaceship_box.x = Runtime.spaceship_box.x + screenWidth;
 			}
 			DrawTexture(sprite, (int)(screenWidth + Runtime.spaceship_box.x), (int)(Runtime.spaceship_box.y), WHITE);
 		}
 
 		if (Runtime.spaceship_box.x + Runtime.spaceship_box.width > screenWidth) {
-			if (Runtime.spaceship_box.x + 15 > screenWidth) {
+			if (Runtime.spaceship_box.x + spaceship_width / 2 > screenWidth) {
 				Runtime.spaceship_box.x = Runtime.spaceship_box.x - screenWidth;
 			}
 			DrawTexture(sprite, (int)(Runtime.spaceship_box.x - screenWidth), (int)(Runtime.spaceship_box.y), WHITE);
 		}
 
 		if (Runtime.spaceship_box.y < 0) {
-			if (Runtime.spaceship_box.y + 15 < 0) {
+			if (Runtime.spaceship_box.y + spaceship_height / 2 < 0) {
 				Runtime.spaceship_box.y = Runtime.spaceship_box.y + screenHeight;
 			}
 			DrawTexture(sprite, (int)(Runtime.spaceship_box.x), (int)(Runtime.spaceship_box.y + screenHeight), WHITE);
 		}
 
 		if (Runtime.spaceship_box.y + Runtime.spaceship_box.height > screenHeight) {
-			if (Runtime.spaceship_box.y + 15 > screenHeight) {
+			if (Runtime.spaceship_box.y + spaceship_height / 2 > screenHeight) {
 				Runtime.spaceship_box.y = Runtime.spaceship_box.y - screenHeight;
 			}
 			DrawTexture(sprite, (int)(Runtime.spaceship_box.x), (int)(Runtime.spaceship_box.y - screenHeight), WHITE);
@@ -946,7 +972,10 @@ void renderStars() {
 
 		Vector2 pos = {stars[i].x, stars[i].y};
 
-		Rectangle tile = {width * static_cast<float>(type), 0.f, width, static_cast<float>(Star_ATL.height)};
+		Rectangle tile = {width * static_cast<float>(type),
+		                  0.f,
+		                  width,
+		                  static_cast<float>(Star_ATL.height)};
 
 		// DrawTexture(Star_ATL, posX, posY, col);
 		DrawTextureRec(Star_ATL, tile, pos, col);
