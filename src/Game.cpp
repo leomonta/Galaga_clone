@@ -12,13 +12,12 @@
 
 using json = nlohmann::json;
 
-#include <chrono> // game loop fps synchronization
-#include <ctime>  // for random numbers
 #include <fstream>
 #include <iomanip> // for json formatting
 #include <iostream>
 #include <math.h> // for sqrt
 #include <string>
+#include <time.h> // for random numbers
 
 #define FOR(x) for (int i = 0; i < x; i++)
 
@@ -60,6 +59,7 @@ void    fillStars();
 void    randomStar(int index);
 void    renderStars();
 void    moveStars();
+long    getCurrMs();
 
 namespace notification {
 
@@ -89,11 +89,12 @@ Vector3 stars[MAX_STAR];
 struct RuntimeVals {
 	// spaceship stats
 	Rectangle spaceship_box         = {400, 800, 31, 31};
-	float     spaceship_speed       = 8.0f;
+	float     spaceship_speed       = 4000.0f;
 	int       spaceship_health      = 10;
 	int       spaceship_num_bullets = 1;
-	float     spaceship_Maxspeed    = 8.0f;
-	int       fireCoolDown          = 5;
+	float     spaceship_Maxspeed    = 4000.0f;
+	int       fireCoolDown          = 200; // ms cooldown
+	int       lastShot              = 300; // the time which the last shot was fired form the ship
 	int       e_fireCoolDown        = 10;
 	bool      upgr_PacmanEffect     = false;
 
@@ -161,25 +162,16 @@ int main() {
 	SetExitKey(KEY_NULL);
 	//-------------------------------------------------------------------------------------- End initialization
 
-	auto      prev = std::chrono::high_resolution_clock::now();
-	auto      now  = std::chrono::high_resolution_clock::now();
-	long long diff; // previous and current time in ms
-
 	// repeat loop
 	while (!Runtime.close) {
 
-		now = std::chrono::high_resolution_clock::now();
-
-		diff = std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count();
-
+		// time passed < 1/fps (0.16ms for 60 fps)
 		// if a frame has passed
-		if (diff < 1000 / fps) {
-			continue;
-		}
+		// if (GetFrameTime() < 1000 / fps) {
+		// continue;
+		// }
 
 		notification::tick();
-
-		prev = std::chrono::high_resolution_clock::now();
 
 		// Main game loop
 		if (!Runtime.pause) { // Detect window close button or ESC key
@@ -265,9 +257,11 @@ void gameLoop() {
 	// fire bullets when spacebar pressed
 	if (IsKeyDown(KEY_SPACE)) {
 		Runtime.spaceship_speed /= 2;
-		if (Runtime.fireCoolDown < 0) {
-			Runtime.fireCoolDown = default_stat.fireCoolDown * deltaTime;
+
+		auto now = getCurrMs();
+		if (now - Runtime.lastShot <= Runtime.fireCoolDown) {
 			fireBullets();
+			Runtime.lastShot = now;
 		}
 	}
 
@@ -357,13 +351,12 @@ void gameLoop() {
 		text += "\n Health: " + std::to_string(Runtime.spaceship_health);
 		text += "\n Score: " + std::to_string(Runtime.score);
 		DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
-		DrawFPS(100, 10);
+		// DrawFPS(100, 10);
 
 		notification::renderNotifications();
 	}
 	EndDrawing();
 	//---------------------------------------------------------------------------------- End draw
-	Runtime.fireCoolDown -= 1 * deltaTime;
 }
 
 /**
@@ -1032,4 +1025,12 @@ void notification::renderNotifications() {
 			DrawText(notifRes.texts[i], posX, posY, 7, col);
 		}
 	}
+}
+
+long getCurrMs() {
+
+	timespec clk;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &clk);
+
+	return clk.tv_nsec / 1000000;
 }
