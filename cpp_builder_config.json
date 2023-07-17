@@ -35,7 +35,7 @@
 
 	"release": {
 		"compiler_args": "-g3 -std=c++2a -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
-		"linker_args": "",
+		"linker_args": "-g",
 		"libraries_dirs": [
 		],
 		"libraries_names": [

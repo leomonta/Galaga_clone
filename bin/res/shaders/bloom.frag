@@ -13,8 +13,8 @@ out vec4 finalColor;
 
 // NOTE: Add here your custom variables
 
-const vec2  size = vec2(800, 450);   // Framebuffer size
-const int   samples = 5;          // Pixels per axis; higher = bigger glow, worse performance
+const vec2  size = vec2(800, 1000); // Framebuffer size
+const int   samples = 5;            // Pixels per axis; higher = bigger glow, worse performance
 const float quality = 2.0;          // Defines size factor: Lower = smaller glow, better quality
 const vec3  colFilter = vec3(0.299, 0.587, 0.114);
 
@@ -25,7 +25,7 @@ void main() {
 	// Texel color fetching from texture sampler
 	vec4 source = texture(texture0, fragTexCoord);
 
-	int range = (samples - 1) / 2;            // should be = (samples - 1)/2;
+	int range = (samples - 1) / 2;
 
 	for (int x = -range; x <= range; x++) {
 		for (int y = -range; y <= range; y++) {

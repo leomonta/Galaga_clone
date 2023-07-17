@@ -123,7 +123,7 @@ struct RuntimeVals {
 	Rectangle upgrade_box      = {-40, -40, 31, 31};
 	float     enemy_spawn_rate = 1; // 10 % base spawn rate per-frame
 	// 0 pacman, 1 speed, 2 bullet
-	int upgrade_type           = -1;
+	int upgrade_type           = 0;
 
 	int  score = 0;
 	bool close = false; // should close the program
@@ -146,9 +146,7 @@ struct notifRes {
 int             fps = 60;
 Texture         spaceship_sprite;
 Texture         Enemyship_sprite;
-Texture         Upgrade_bullet;
-Texture         Upgrade_speed;
-Texture         Upgrade_pacman;
+Texture         Upgrades[3];
 Texture         Star_ATL;
 RenderTexture2D frameBuffer;
 Shader          bloomShader;
@@ -163,15 +161,15 @@ int main() {
 	InitWindow(screenWidth, screenHeight, "Galaga clone by Leonardo");
 
 	// TODO: check if the textures are actually loaded, they return id <= 0 if so
-	spaceship_sprite = LoadTexture("./res/img/ships/spaceship.png");
-	Enemyship_sprite = LoadTexture("./res/img/ships/enemyship.png");
-	Upgrade_bullet   = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
-	Upgrade_speed    = LoadTexture("./res/img/upgrades/upgrade_speed.png");
-	Upgrade_pacman   = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
-	Star_ATL         = LoadTexture("./res/img/stars/star_atlas.png");
-	Consolas         = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
-	frameBuffer      = LoadRenderTexture(screenWidth, screenHeight);
-	bloomShader      = LoadShader(nullptr, "./res/shaders/bloom.frag");
+	spaceship_sprite         = LoadTexture("./res/img/ships/spaceship.png");
+	Enemyship_sprite         = LoadTexture("./res/img/ships/enemyship.png");
+	Upgrades[UPGRADE_BULLET] = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
+	Upgrades[UPGRADE_SPEED]  = LoadTexture("./res/img/upgrades/upgrade_speed.png");
+	Upgrades[UPGRADE_PACMAN] = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
+	Star_ATL                 = LoadTexture("./res/img/stars/star_atlas.png");
+	Consolas                 = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
+	frameBuffer              = LoadRenderTexture(screenWidth, screenHeight);
+	bloomShader              = LoadShader(nullptr, "./res/shaders/bloom.frag");
 
 	HideCursor();
 	// Loading textures
@@ -209,9 +207,9 @@ int main() {
 	//-------------------------------------------------------------------------------------- De-Initialization
 	UnloadTexture(spaceship_sprite);
 	UnloadTexture(Enemyship_sprite);
-	UnloadTexture(Upgrade_bullet);
-	UnloadTexture(Upgrade_pacman);
-	UnloadTexture(Upgrade_speed);
+	UnloadTexture(Upgrades[UPGRADE_BULLET]);
+	UnloadTexture(Upgrades[UPGRADE_SPEED]);
+	UnloadTexture(Upgrades[UPGRADE_PACMAN]);
 	UnloadTexture(Star_ATL);
 	UnloadFont(Consolas);
 
@@ -335,6 +333,8 @@ void gameLoop() {
 		// draw screen
 		ClearBackground(SCREEN_BG);
 
+		renderStars();
+
 		pacmanEffect(spaceship_sprite);
 
 		// draw objects
@@ -347,17 +347,7 @@ void gameLoop() {
 		}
 
 		// draw the correct upgrade
-		if (Runtime.upgrade_type == 0) {
-			DrawTexture(Upgrade_pacman, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
-
-		} else if (Runtime.upgrade_type == 1) {
-			DrawTexture(Upgrade_speed, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
-
-		} else if (Runtime.upgrade_type == 2) {
-			DrawTexture(Upgrade_bullet, (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
-		}
-
-		renderStars();
+		DrawTexture(Upgrades[Runtime.upgrade_type], (int)(Runtime.upgrade_box.x), (int)(Runtime.upgrade_box.y), WHITE);
 
 		renderBullets();
 	}
@@ -367,7 +357,7 @@ void gameLoop() {
 	{
 		BeginShaderMode(bloomShader);
 		{
-			DrawTextureRec(frameBuffer.texture, (Rectangle){0.f, 0.f, frameBuffer.texture.width, -frameBuffer.texture.height}, (Vector2){0.f, 0.f}, WHITE);
+			DrawTextureRec(frameBuffer.texture, (Rectangle){0.f, 0.f, (float)(frameBuffer.texture.width), (float)(-frameBuffer.texture.height)}, (Vector2){0.f, 0.f}, WHITE);
 		}
 		EndShaderMode();
 		// Draw spaceship stats on the screen
@@ -942,7 +932,7 @@ void randomStar(int index) {
 	float x = static_cast<float>(rand() % screenWidth);
 	float y = static_cast<float>(rand() % screenHeight);
 
-	float speed = static_cast<float>(rand() % 3 * STAR_SPEED_MULT) + 1.f;
+	float speed = static_cast<float>((float)(rand() % 3) * STAR_SPEED_MULT) + 1.f;
 
 	stars[index] = {x, y, speed};
 }
@@ -1007,7 +997,7 @@ void moveStars() {
  */
 void notification::notify(const char *s, Vector2 pos) {
 	notifRes.texts[notifRes.index]      = s;
-	notifRes.countDowns[notifRes.index] = 2 * fps;
+	notifRes.countDowns[notifRes.index] = (char)(2 * fps);
 	notifRes.positions[notifRes.index]  = pos;
 	notifRes.index++;
 
@@ -1038,7 +1028,8 @@ void notification::renderNotifications() {
 	for (int i = 0; i < MAX_NOTIFICATIONS; ++i) {
 		auto col = WHITE;
 		if (notifRes.texts[i] != nullptr) {
-			float dec = (col.a / (fps * 2.f));
+			auto temp = float(fps) * 2.f;
+			float dec = (float) (col.a / temp);
 			dec *= notifRes.countDowns[i];
 			col.a = static_cast<unsigned char>(dec);
 
@@ -1049,11 +1040,17 @@ void notification::renderNotifications() {
 	}
 }
 
+/**
+ * Return the time in ms since the start of the window
+ */
 long getCurrMs() {
 
 	return static_cast<long>(GetTime() * 1000);
 }
 
+/**
+ * RAndompli choose and placee an upgrade in the field
+ */
 void pickRandomUpgrade(int enemyIndex) {
 
 	// drop upgrades if the enemy is dead
@@ -1075,6 +1072,9 @@ void pickRandomUpgrade(int enemyIndex) {
 	}
 }
 
+/**
+ * Shorthand to check for hitting an enemy
+ */
 bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 	// check collision for both diagonals
 	for (int k = 0; k < 2; k++) {
