@@ -29,10 +29,10 @@ typedef struct RuntimeVals {
 
 const RuntimeVals default_stat = {
     {400, 800, 31, 31},
-    4,
+    6,
     10,
     1,
-    4,
+    6,
     200,
     0,
     10,
@@ -69,3 +69,36 @@ void    moveStars();
 long    getCurrMs();
 void    pickRandomUpgrade(int enemyIndex);
 bool    bulletEnemyCollision(int bulletIndex, int enemyIndex);
+
+// drawing loops
+void gameLoop();
+void gameInputs();
+
+void pauseLoop();
+void deathLoop();
+
+// The fist two values represent the coordinates, the latter two the accelleration
+Vector4 bullets[MAX_BULLETS];
+Vector4 e_bullets[MAX_BULLETS];
+
+// The coordinates of all the enemies
+Rectangle enemies[MAX_ENEMY];
+
+// other enemies stats
+char e_coolDown[MAX_ENEMY];
+int  e_health[MAX_ENEMY];
+
+// x, y, z,
+// x, y, speed
+// the type is deducted from the last number of the x coord
+// type = x % 3
+Vector3 stars[MAX_STAR];
+
+int             fps = 60;
+Texture         spaceship_sprite;
+Texture         Enemyship_sprite;
+Texture         Upgrades[3];
+Texture         Star_ATL;
+RenderTexture2D frameBuffer;
+Shader          bloomShader;
+Font            Consolas;

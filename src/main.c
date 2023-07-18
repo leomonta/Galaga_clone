@@ -18,42 +18,6 @@
 #include <time.h> // for random numbers
 
 #define FOR(x) for (int i = 0; i < x; ++i)
-// drawing loops
-void gameLoop();
-void pauseLoop();
-void deathLoop();
-
-// The fist two values represent the coordinates, the latter two the accelleration
-Vector4 bullets[MAX_BULLETS];
-Vector4 e_bullets[MAX_BULLETS];
-
-// The coordinates of all the enemies
-Rectangle enemies[MAX_ENEMY];
-
-// other enemies stats
-char e_coolDown[MAX_ENEMY];
-int  e_health[MAX_ENEMY];
-
-// x, y, z,
-// x, y, speed
-// the type is deducted from the last number of the x coord
-// type = x % 3
-Vector3 stars[MAX_STAR];
-
-#define spaceship_width  30
-#define spaceship_height 30
-#define screenWidth      800
-#define screenHeight     1000
-
-int             fps = 60;
-Texture         spaceship_sprite;
-Texture         Enemyship_sprite;
-Texture         Upgrades[3];
-Texture         Star_ATL;
-RenderTexture2D frameBuffer;
-Shader          bloomShader;
-Font            Consolas;
-double          loopTime;
 
 int main() {
 	// ------------------------------------------------------------------------------------- Initialization
@@ -175,34 +139,10 @@ void gameLoop() {
 		return;
 	}
 
-	auto deltaTime = GetFrameTime();
+	gameInputs();
 
 	// limit the speed to the maximum possible as base
 	runtime.spaceship_speed = runtime.spaceship_Maxspeed;
-
-	// --------------------------------------------------------------------------------- Check Keyboard
-	// fire bullets when spacebar pressed
-	if (IsKeyDown(KEY_SPACE)) {
-		runtime.spaceship_speed /= 2;
-
-		auto now = getCurrMs();
-		if (now - runtime.lastShot >= runtime.fireCoolDown) {
-			fireBullets();
-			runtime.lastShot = now;
-		}
-	}
-
-	// movement
-	if (IsKeyDown(KEY_RIGHT)) {
-		runtime.spaceship_box.x += (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
-	} else if (IsKeyDown(KEY_LEFT)) {
-		runtime.spaceship_box.x -= (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
-	}
-	if (IsKeyDown(KEY_UP)) {
-		runtime.spaceship_box.y -= (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
-	} else if (IsKeyDown(KEY_DOWN)) {
-		runtime.spaceship_box.y += (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
-	}
 
 	// more upgrade, more enemies
 	float spawn = (float)(GetRandomValue(0, 30000));
@@ -579,7 +519,7 @@ void checkEntitiesCollisions() {
 			notif__scheduleNotification("+ 200", pos, (unsigned char)(2 * fps));
 			runtime.score += 200;
 			runtime.spaceship_Maxspeed++;
-			if (runtime.spaceship_Maxspeed >= 15) {
+			if (runtime.spaceship_Maxspeed >= MAX_SPEED) {
 				runtime.spaceship_Maxspeed = 15;
 			}
 			break;
@@ -588,7 +528,7 @@ void checkEntitiesCollisions() {
 			notif__scheduleNotification("+ 200", pos, (unsigned char)(2 * fps));
 			runtime.score += 200;
 			runtime.spaceship_num_bullets++;
-			if (runtime.spaceship_num_bullets > 10) {
+			if (runtime.spaceship_num_bullets > MAX_BULLET) {
 				runtime.spaceship_num_bullets = 10;
 			}
 			break;
@@ -859,8 +799,8 @@ void renderStars() {
 		// this can be moved to the shader
 		int type = (int)(stars[i].x) % 3;
 
-		unsigned char light = (unsigned char)(stars[i].z * 20.f);
-		Color         col   = {255, 255, 255, light};
+		unsigned char alpha = (unsigned char)(stars[i].z / STAR_SPEED_MULT * 30.f);
+		Color         col   = {100, 100, 100, 100 + alpha};
 
 		switch (type) {
 		case 0:
@@ -889,7 +829,6 @@ void renderStars() {
 		                  width,
 		                  (float)(Star_ATL.height)};
 
-		// DrawTexture(Star_ATL, posX, posY, col);
 		DrawTextureRec(Star_ATL, tile, pos, col);
 	}
 }
@@ -993,4 +932,33 @@ bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 	}
 
 	return false;
+}
+
+void gameInputs() {
+
+	auto deltaTime = GetFrameTime();
+
+	// --------------------------------------------------------------------------------- Check Keyboard
+	// fire bullets when spacebar pressed
+	if (IsKeyDown(KEY_SPACE)) {
+		runtime.spaceship_speed /= 2;
+
+		auto now = getCurrMs();
+		if (now - runtime.lastShot >= runtime.fireCoolDown) {
+			fireBullets();
+			runtime.lastShot = now;
+		}
+	}
+
+	// movement
+	if (IsKeyDown(KEY_RIGHT)) {
+		runtime.spaceship_box.x += (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
+	} else if (IsKeyDown(KEY_LEFT)) {
+		runtime.spaceship_box.x -= (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
+	}
+	if (IsKeyDown(KEY_UP)) {
+		runtime.spaceship_box.y -= (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
+	} else if (IsKeyDown(KEY_DOWN)) {
+		runtime.spaceship_box.y += (float)(runtime.spaceship_speed) * deltaTime * MOVEMENT_SPEED_MULT;
+	}
 }
