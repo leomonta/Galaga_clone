@@ -3,8 +3,8 @@
 	},
 	"compiler": {
 		"compiler_style": "gcc",
-		"compiler_exe": "g++",
-		"linker_exe": "g++"
+		"compiler_exe": "gcc",
+		"linker_exe": "gcc"
 	},
 	
 	"directories": {
@@ -21,20 +21,21 @@
 	},
 
 	"debug": {
-		"compiler_args": "-g3 -std=c++2a -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra -fsanitize=address -fsanitize=leak",
+		"compiler_args": "-g3 -std=c2x -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra -fsanitize=address -fsanitize=leak",
 		"linker_args": "-fsanitize=address -fsanitize=leak",
 		"libraries_dirs": [
 		],
 		"libraries_names": [
 			"raylib",
 			"dl",
-			"pthread"
+			"pthread",
+			"m"
 		]
 
 	},
 
 	"release": {
-		"compiler_args": "-g3 -std=c++2a -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
+		"compiler_args": "-g3 -std=c2x -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
 		"linker_args": "-g",
 		"libraries_dirs": [
 		],

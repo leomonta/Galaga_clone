@@ -13,9 +13,9 @@
 #define MAX_STAR          100
 #define MAX_LENGHT_NAME   6
 
-#define BULLET_SPAWN_WEIGHT 0.5
-#define PACMAN_SPAWN_WEIGHT 2
-#define SPEED_SPAWN_WEIGHT  0.7
+#define BULLET_SPAWN_WEIGHT 0.5f
+#define PACMAN_SPAWN_WEIGHT 2.0f
+#define SPEED_SPAWN_WEIGHT  0.7f
 
 #define MOVEMENT_SPEED_MULT  15.f
 #define ENEMY_SPEED_MULT     10.f
@@ -24,12 +24,12 @@
 #define DEFAULT_BULLET_SPEED -12.f
 
 #define SCREEN_BG \
-	{ 0, 0, 40, 255 }
+	(Color){ 0, 0, 40, 255 }
 #define DefaultBullet \
-	{ -1, -1, 0, 0 }
+	(Vector4){ -1, -1, 0, 0 }
 #define DefaultShip \
-	{ -40, -40, 0, 0 }
+	(Rectangle){ -40, -40, 0, 0 }
 #define DefaultStar \
-	{ -1, -1, -1, -1 }
+	(Vector4){ -1, -1, -1, -1 }
 
 #define nullptr 0
