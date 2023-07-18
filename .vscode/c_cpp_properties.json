@@ -3,8 +3,7 @@
 		{
 			"name": "Linux64",
 			"includePath": [
-				"include",
-				"ext"
+				"include"
 			],
 			"defines": [
 				"_DEBUG",
@@ -13,8 +12,8 @@
 				"PLATFORM_DESKTOP"
 			],
 			"windowsSdkVersion": "10.0.18362.0",
-			"compilerPath": "/usr/bin/g++",
-			"cStandard": "c11",
+			"compilerPath": "/usr/bin/gcc",
+			"cStandard": "c23",
 			"cppStandard": "c++11",
 			"intelliSenseMode": "linux-gcc-x64"
 		}
