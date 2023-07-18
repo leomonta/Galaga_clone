@@ -4,8 +4,8 @@
 #define UPGRADE_SPEED  1
 #define UPGRADE_BULLET 2
 
-#define MAX_SPEED  18
-#define MAX_BULLET 10
+#define MAX_SPEED  16
+#define MAX_BULLET 8
 
 #define MAX_BULLETS       1000
 #define MAX_NOTIFICATIONS 10

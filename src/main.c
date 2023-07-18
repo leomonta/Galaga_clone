@@ -54,7 +54,7 @@ int main() {
 		notif__tick();
 
 		// Main game loop
-		if (!runtime.pause) { // Detect window close button or ESC key
+		if (!runtime.pause && runtime.spaceship_health > 0) { // Detect window close button or ESC key
 			gameLoop();
 		}
 
@@ -309,8 +309,8 @@ void renderBullets() {
 			    bullets[i].x,
 			    bullets[i].y};
 			Vector2 bend = {
-			    bullets[i].x + bullets[i].z,
-			    bullets[i].y + bullets[i].w};
+			    bullets[i].x + bullets[i].z * 2,
+			    bullets[i].y + bullets[i].w * 2};
 
 			DrawLineEx(bstart, bend, 2.5, WHITE);
 		}
@@ -321,8 +321,8 @@ void renderBullets() {
 			    e_bullets[i].x,
 			    e_bullets[i].y};
 			Vector2 bend = {
-			    e_bullets[i].x + e_bullets[i].z,
-			    e_bullets[i].y + e_bullets[i].w};
+			    e_bullets[i].x + e_bullets[i].z * 2,
+			    e_bullets[i].y + e_bullets[i].w * 2};
 
 			DrawLineEx(bstart, bend, 2.5, YELLOW);
 		}
