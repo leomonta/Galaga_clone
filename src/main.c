@@ -15,6 +15,7 @@
 
 #include <math.h> // for sqrt
 #include <raylib.h>
+#include <stdint.h>
 #include <time.h> // for random numbers
 
 #define FOR(x) for (int i = 0; i < x; ++i)
@@ -128,6 +129,7 @@ void pauseLoop() {
  */
 void gameLoop() {
 
+
 	if (WindowShouldClose()) {
 		runtime.close = true;
 		return;
@@ -160,6 +162,7 @@ void gameLoop() {
 	}
 
 	// manage objects movement and interactions
+	physics();
 
 	// check if the spaceship has died
 	if (runtime.spaceship_health <= 0) {
@@ -210,7 +213,6 @@ void gameLoop() {
 		DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
 		*/
 
-		physics();
 		DrawFPS(200, 10);
 
 		notif__renderNotifications();
@@ -923,7 +925,7 @@ bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 		                      bullets[bulletIndex].x + (bullets[bulletIndex].z * 2),
 		                      bullets[bulletIndex].y + (bullets[bulletIndex].w * 2)};
 
-		DrawLine(lineEnemy.x, lineEnemy.y, lineEnemy.z, lineEnemy.w, WHITE);
+		// DrawLine(lineEnemy.x, lineEnemy.y, lineEnemy.z, lineEnemy.w, WHITE);
 
 		Vector2 intersect_point = intersection(lineBullet, lineEnemy);
 
