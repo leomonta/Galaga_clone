@@ -7,18 +7,18 @@
 // Runtime values that are gonna change
 typedef struct RuntimeVals {
 	// spaceship stats
-	Rectangle spaceship_box;
-	int       spaceship_speed;
-	int       spaceship_health;
-	int       spaceship_num_bullets;
-	int       spaceship_Maxspeed;
-	long      fireCoolDown; // ms cooldown
-	long      lastShot;     // the time which the last shot was fired form the ship
-	int       e_fireCoolDown;
-	bool      upgr_PacmanEffect;
+	Vector2 spaceship_box;
+	int     spaceship_speed;
+	int     spaceship_health;
+	int     spaceship_num_bullets;
+	int     spaceship_Maxspeed;
+	long    fireCoolDown; // ms cooldown
+	long    lastShot;     // the time which the last shot was fired form the ship
+	int     e_fireCoolDown;
+	bool    upgr_PacmanEffect;
 
-	Rectangle upgrade_box;
-	float     enemy_spawn_rate; // 10 % base spawn rate per-frame
+	Vector2 upgrade_box;
+	float   enemy_spawn_rate; // 10 % base spawn rate per-frame
 	// 0 pacman, 1 speed, 2 bullet
 	int upgrade_type;
 
@@ -28,7 +28,7 @@ typedef struct RuntimeVals {
 } RuntimeVals;
 
 const RuntimeVals default_stat = {
-    {400, 800, 31, 31},
+    {400, 800},
     6,
     10,
     1,
@@ -37,7 +37,7 @@ const RuntimeVals default_stat = {
     0,
     10,
     false,
-    DefaultShip,
+    DefaultShipPos,
     1,
     0,
     0,
@@ -48,7 +48,7 @@ const RuntimeVals default_stat = {
 RuntimeVals runtime;
 
 void    spawnEnemies();
-void    addEnemies(Rectangle coords);
+void    addEnemies(Vector2 coords);
 void    addBullet(Vector4 bullet, int n);
 void    renderBullets();
 void    resetArrays();
@@ -82,7 +82,7 @@ Vector4 bullets[MAX_BULLETS];
 Vector4 e_bullets[MAX_BULLETS];
 
 // The coordinates of all the enemies
-Rectangle enemies[MAX_ENEMY];
+Vector2 enemies[MAX_ENEMY];
 
 // other enemies stats
 char e_coolDown[MAX_ENEMY];

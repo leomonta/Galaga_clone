@@ -160,7 +160,6 @@ void gameLoop() {
 	}
 
 	// manage objects movement and interactions
-	physics();
 
 	// check if the spaceship has died
 	if (runtime.spaceship_health <= 0) {
@@ -210,6 +209,8 @@ void gameLoop() {
 		text += "\n Score: " + std::to_string(runtime.score);
 		DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
 		*/
+
+		physics();
 		DrawFPS(200, 10);
 
 		notif__renderNotifications();
@@ -251,17 +252,15 @@ void deathLoop() {
  * Quick shortcut to spawn a random enemy in the top of the map
  */
 void spawnEnemies() {
-	addEnemies((Rectangle){
+	addEnemies((Vector2){
 	    (float)(GetRandomValue(0, screenWidth - Enemyship_sprite.height)),
-	    (float)(GetRandomValue(0, 40)),
-	    (float)(Enemyship_sprite.width),
-	    (float)(Enemyship_sprite.height)});
+	    (float)(GetRandomValue(0, 40))});
 }
 
 /**
  * Add the given enemy in the first spot available and set its health
  */
-void addEnemies(Rectangle coords) {
+void addEnemies(Vector2 coords) {
 
 	FOR(MAX_ENEMY) {
 
@@ -344,7 +343,7 @@ void resetArrays() {
 
 		e_health[i]   = 0;
 		e_coolDown[i] = (char)(default_stat.e_fireCoolDown);
-		enemies[i]    = DefaultShip;
+		enemies[i]    = DefaultShipPos;
 	}
 }
 
@@ -414,12 +413,12 @@ void moveEnemies() {
 		// and remove it if it goes offscreen or is dead
 		if (e_health[i] <= 0) {
 			notif__scheduleNotification("+ 10", (Vector2){enemies[i].x, enemies[i].y}, (unsigned char)(2 * fps));
-			enemies[i] = DefaultShip;
+			enemies[i] = DefaultShipPos;
 			runtime.score += 10;
 		}
 
 		if (enemies[i].y > screenHeight) {
-			enemies[i] = DefaultShip;
+			enemies[i] = DefaultShipPos;
 			runtime.score -= 50;
 		}
 	}
@@ -459,14 +458,14 @@ void checkBulletsCollision() {
 	// i don't need to recalculate these for each bullet, i calculate once per frame
 	Vector4 linespace[2] = {
 	    {runtime.spaceship_box.x,
-	     runtime.spaceship_box.y + runtime.spaceship_box.height,
-	     runtime.spaceship_box.x + runtime.spaceship_box.width,
-	     runtime.spaceship_box.y                               }, // linespace 1
+	     runtime.spaceship_box.y + spaceship_height,
+	     runtime.spaceship_box.x + spaceship_width,
+	     runtime.spaceship_box.y                   }, // linespace 1
 
 	    {runtime.spaceship_box.x,
 	     runtime.spaceship_box.y,
-	     runtime.spaceship_box.x + runtime.spaceship_box.width,
-	     runtime.spaceship_box.y + runtime.spaceship_box.height}  // linespace 2
+	     runtime.spaceship_box.x + spaceship_width,
+	     runtime.spaceship_box.y + spaceship_height}  // linespace 2
 	};
 
 	FOR(MAX_BULLETS) {
@@ -501,8 +500,18 @@ void checkBulletsCollision() {
  */
 void checkEntitiesCollisions() {
 
+	Rectangle uBox = {runtime.upgrade_box.x,
+	                  runtime.upgrade_box.y,
+	                  spaceship_width,
+	                  spaceship_height};
+
+	Rectangle sBox = {runtime.spaceship_box.x,
+	                  runtime.spaceship_box.y,
+	                  spaceship_width,
+	                  spaceship_height};
+
 	// check collision with upgrades
-	if (CheckCollisionRecs(runtime.upgrade_box, runtime.spaceship_box)) {
+	if (CheckCollisionRecs(uBox, sBox)) {
 
 		Vector2 pos = {runtime.upgrade_box.x,
 		               runtime.upgrade_box.y};
@@ -537,7 +546,7 @@ void checkEntitiesCollisions() {
 			break;
 		}
 
-		runtime.upgrade_box = DefaultShip; // delete upgrade
+		runtime.upgrade_box = DefaultShipPos; // delete upgrade
 	}
 }
 
@@ -567,8 +576,8 @@ void enemyAI() {
 			float movx = distx * mult * -1;
 			float movy = disty * mult * -1;
 
-			Vector4 bullet = {enemies[i].x + enemies[i].width / 2,
-			                  enemies[i].y + enemies[i].height,
+			Vector4 bullet = {enemies[i].x + spaceship_width / 2,
+			                  enemies[i].y + spaceship_height,
 			                  movx,
 			                  movy};
 
@@ -632,7 +641,7 @@ void pacmanEffect(Texture sprite) {
 			DrawTexture(sprite, (int)(screenWidth + runtime.spaceship_box.x), (int)(runtime.spaceship_box.y), WHITE);
 		}
 
-		if (runtime.spaceship_box.x + runtime.spaceship_box.width > screenWidth) {
+		if (runtime.spaceship_box.x + spaceship_width > screenWidth) {
 			if (runtime.spaceship_box.x + spaceship_width / 2 > screenWidth) {
 				runtime.spaceship_box.x = runtime.spaceship_box.x - screenWidth;
 			}
@@ -646,7 +655,7 @@ void pacmanEffect(Texture sprite) {
 			DrawTexture(sprite, (int)(runtime.spaceship_box.x), (int)(runtime.spaceship_box.y + screenHeight), WHITE);
 		}
 
-		if (runtime.spaceship_box.y + runtime.spaceship_box.height > screenHeight) {
+		if (runtime.spaceship_box.y + spaceship_height > screenHeight) {
 			if (runtime.spaceship_box.y + spaceship_height / 2 > screenHeight) {
 				runtime.spaceship_box.y = runtime.spaceship_box.y - screenHeight;
 			}
@@ -657,16 +666,16 @@ void pacmanEffect(Texture sprite) {
 			runtime.spaceship_box.x = 0;
 		}
 
-		if (runtime.spaceship_box.x + runtime.spaceship_box.width > screenWidth) {
-			runtime.spaceship_box.x = screenWidth - runtime.spaceship_box.width;
+		if (runtime.spaceship_box.x + spaceship_width > screenWidth) {
+			runtime.spaceship_box.x = screenWidth - spaceship_width;
 		}
 
 		if (runtime.spaceship_box.y < 0) {
 			runtime.spaceship_box.y = 0;
 		}
 
-		if (runtime.spaceship_box.y + runtime.spaceship_box.height > screenHeight) {
-			runtime.spaceship_box.y = screenHeight - runtime.spaceship_box.height;
+		if (runtime.spaceship_box.y + spaceship_height > screenHeight) {
+			runtime.spaceship_box.y = screenHeight - spaceship_height;
 		}
 	}
 }
@@ -869,11 +878,9 @@ void pickRandomUpgrade(int enemyIndex) {
 	// drop upgrades if the enemy is dead
 	// 20% drop rate and check if the enemy is dead
 	if (GetRandomValue(0, 100) < 20 && e_health[enemyIndex] <= 0) {
-		runtime.upgrade_box = (Rectangle){
+		runtime.upgrade_box = (Vector2){
 		    enemies[enemyIndex].x,
-		    enemies[enemyIndex].y,
-		    enemies[enemyIndex].width,
-		    enemies[enemyIndex].height}; // drop upgrade at enemy old position
+		    enemies[enemyIndex].y}; // drop upgrade at enemy old position
 
 		auto temp = GetRandomValue(0, 100); // decide which upgrade
 		if (temp < 6) {
@@ -898,23 +905,25 @@ bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 		if (k == 0) {
 			// diagonal 1
 			lineEnemy = (Vector4){
-			    enemies[enemyIndex].x + enemies[enemyIndex].width / 2,
+			    enemies[enemyIndex].x,
 			    enemies[enemyIndex].y,
-			    enemies[enemyIndex].x + enemies[enemyIndex].width / 2,
-			    enemies[enemyIndex].y + enemies[enemyIndex].height};
+			    enemies[enemyIndex].x + spaceship_width,
+			    enemies[enemyIndex].y + spaceship_height};
 		} else {
 			// diagonal 2
 			lineEnemy = (Vector4){
+			    enemies[enemyIndex].x + spaceship_width,
+			    enemies[enemyIndex].y,
 			    enemies[enemyIndex].x,
-			    enemies[enemyIndex].y + enemies[enemyIndex].height / 2,
-			    enemies[enemyIndex].x + enemies[enemyIndex].width,
-			    enemies[enemyIndex].y + enemies[enemyIndex].height / 2};
+			    enemies[enemyIndex].y + spaceship_height};
 		}
 
 		Vector4 lineBullet = {bullets[bulletIndex].x,
 		                      bullets[bulletIndex].y,
 		                      bullets[bulletIndex].x + (bullets[bulletIndex].z * 2),
 		                      bullets[bulletIndex].y + (bullets[bulletIndex].w * 2)};
+
+		DrawLine(lineEnemy.x, lineEnemy.y, lineEnemy.z, lineEnemy.w, WHITE);
 
 		Vector2 intersect_point = intersection(lineBullet, lineEnemy);
 

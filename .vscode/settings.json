@@ -109,6 +109,7 @@
 		"constants.h": "c",
 		"jobsmodel.h": "c",
 		"notification.h": "c",
-		"stdbool.h": "c"
+		"stdbool.h": "c",
+		"main.h": "c"
 	},
 }

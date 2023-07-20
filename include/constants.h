@@ -27,8 +27,8 @@
 	(Color) { 0, 0, 40, 255 }
 #define DefaultBullet \
 	(Vector4) { -1, -1, 0, 0 }
-#define DefaultShip \
-	(Rectangle) { -40, -40, 0, 0 }
+#define DefaultShipPos \
+	(Vector2) { -40, -40}
 #define DefaultStar \
 	(Vector4) { -1, -1, -1, -1 }
 
