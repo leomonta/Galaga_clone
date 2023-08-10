@@ -110,6 +110,7 @@
 		"jobsmodel.h": "c",
 		"notification.h": "c",
 		"stdbool.h": "c",
-		"main.h": "c"
+		"main.h": "c",
+		"utils.h": "c"
 	},
 }

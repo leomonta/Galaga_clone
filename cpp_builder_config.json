@@ -1,45 +1,37 @@
 {
-	"scripts" : {
-	},
+	"scripts": {},
 	"compiler": {
 		"compiler_style": "gcc",
 		"compiler_exe": "gcc",
 		"linker_exe": "gcc"
 	},
-	
+
 	"directories": {
 		"project_dir": ".",
 		"exe_path_name": "bin/Game.bin",
-		"include_dirs": [
-			"include",
-			"ext"
-		],
-		"source_dirs": [
-			"src"
-		],
+		"include_dirs": ["include", "ext"],
+		"source_dirs": ["src"],
 		"temp_dir": "obj"
 	},
 
-	"debug": {
-		"compiler_args": "-g3 -std=c2x -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra -fsanitize=address -fsanitize=leak",
-		"linker_args": "-fsanitize=address -fsanitize=leak",
-		"libraries_dirs": [
-		],
-		"libraries_names": [
-			"raylib",
-			"dl",
-			"pthread",
-			"m"
-		]
+	"clean": {
+		"compiler_args": "-g3 -std=c2x -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
+		"linker_args": "",
+		"libraries_dirs": [],
+		"libraries_names": ["raylib", "dl", "pthread", "m"]
+	},
 
+	"analyzer": {
+		"compiler_args": "-g3 -std=c2x -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra -fanalyzer -fsanitize=address -fsanitize=leak",
+		"linker_args": "-fsanitize=address -fsanitize=leak",
+		"libraries_dirs": [],
+		"libraries_names": ["raylib", "dl", "pthread", "m"]
 	},
 
 	"release": {
-		"compiler_args": "-g3 -std=c2x -Wno-missing-field-initializers -Wno-unknown-pragmas -Wall -Wconversion -Wshadow -Wextra",
-		"linker_args": "-g",
-		"libraries_dirs": [
-		],
-		"libraries_names": [
-		]
+		"compiler_args": "-Ofast -std=c2x",
+		"linker_args": "",
+		"libraries_dirs": [],
+		"libraries_names": ["raylib", "dl", "pthread", "m"]
 	}
 }

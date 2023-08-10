@@ -12,13 +12,12 @@
 
 #include "constants.h"
 #include "notifications.h"
+#include "utils.h"
 
 #include <math.h> // for sqrt
 #include <raylib.h>
 #include <stdint.h>
 #include <time.h> // for random numbers
-
-#define FOR(x) for (int i = 0; i < x; ++i)
 
 int main() {
 	// ------------------------------------------------------------------------------------- Initialization
@@ -40,11 +39,11 @@ int main() {
 	HideCursor();
 	// Loading textures
 
-	fillStars();
+	fillStars(stars);
 
-	resetArrays();
+	resetArrays(bullets, e_bullets, e_coolDown, e_health, enemies);
 
-	resetStats();
+	runtime = default_stat;
 	SetTargetFPS(fps); // Set our game to run at given frames-per-second
 	SetExitKey(KEY_NULL);
 	//-------------------------------------------------------------------------------------- End initialization
@@ -129,7 +128,6 @@ void pauseLoop() {
  */
 void gameLoop() {
 
-
 	if (WindowShouldClose()) {
 		runtime.close = true;
 		return;
@@ -149,7 +147,7 @@ void gameLoop() {
 	// more upgrade, more enemies
 	float spawn = (float)(GetRandomValue(0, 30000));
 	if (spawn < runtime.enemy_spawn_rate) {
-		spawnEnemies();
+		spawnRandomEnemies(enemies, e_health);
 		runtime.enemy_spawn_rate = default_stat.enemy_spawn_rate;
 
 	} else {
@@ -183,7 +181,7 @@ void gameLoop() {
 
 		// draw objects
 		DrawTextureV(spaceship_sprite, (Vector2){runtime.spaceship_box.x, runtime.spaceship_box.y}, WHITE);
-		FOR(MAX_ENEMY) {
+		for (int i = 0; i < MAX_ENEMY; ++i) {
 
 			if (enemies[i].x != -40 && enemies[i].y != -40) {
 				DrawTextureV(Enemyship_sprite, (Vector2){enemies[i].x, enemies[i].y}, WHITE);
@@ -236,10 +234,9 @@ void deathLoop() {
 	EndDrawing();
 
 	if (IsKeyPressed(KEY_ENTER)) {
-		// save();
-		resetArrays();
+		resetArrays(bullets, e_bullets, e_coolDown, e_health, enemies);
 
-		resetStats();
+		runtime = default_stat;
 		return;
 	}
 
@@ -251,58 +248,11 @@ void deathLoop() {
 }
 
 /**
- * Quick shortcut to spawn a random enemy in the top of the map
- */
-void spawnEnemies() {
-	addEnemies((Vector2){
-	    (float)(GetRandomValue(0, screenWidth - Enemyship_sprite.height)),
-	    (float)(GetRandomValue(0, 40))});
-}
-
-/**
- * Add the given enemy in the first spot available and set its health
- */
-void addEnemies(Vector2 coords) {
-
-	FOR(MAX_ENEMY) {
-
-		if (enemies[i].x == -40 && enemies[i].y == -40) {
-			enemies[i]  = coords;
-			e_health[i] = 5;
-			return;
-		}
-	}
-}
-
-/**
- * Add the given bullet in the first spot available
- * n is the index of the enemy who shoot it, -1 if it was shot by the main spaceship
- */
-void addBullet(Vector4 bullet, int n) {
-
-	if (n == -1) {
-		FOR(MAX_BULLETS) {
-
-			if (bullets[i].x == -1 && bullets[i].y == -1) {
-				bullets[i] = bullet;
-				return;
-			}
-		}
-	} else {
-
-		if (e_bullets[n].x == -1 && e_bullets[n].y == -1) {
-			e_bullets[n] = bullet;
-			return;
-		}
-	}
-}
-
-/**
  * Render all active bullets
  */
 void renderBullets() {
 
-	FOR(MAX_BULLETS) {
+	for (int i = 0; i < MAX_BULLETS; ++i) {
 
 		if (bullets[i].x != -1 && bullets[i].y != -1) {
 			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
@@ -331,32 +281,6 @@ void renderBullets() {
 }
 
 /**
- * Set the initial value for all the used arrays
- */
-void resetArrays() {
-
-	FOR(MAX_BULLETS) {
-
-		bullets[i]   = DefaultBullet;
-		e_bullets[i] = DefaultBullet;
-	}
-
-	FOR(MAX_ENEMY) {
-
-		e_health[i]   = 0;
-		e_coolDown[i] = (char)(default_stat.e_fireCoolDown);
-		enemies[i]    = DefaultShipPos;
-	}
-}
-
-/**
- * Reset all the stats and upgrades
- */
-void resetStats() {
-	runtime = default_stat;
-}
-
-/**
  * Move, if they exist, spaceship bullets and enemy bullets
  */
 void moveBullets() {
@@ -364,7 +288,7 @@ void moveBullets() {
 	auto deltaTime = GetFrameTime();
 
 	// move bullets
-	FOR(MAX_BULLETS) {
+	for (int i = 0; i < MAX_BULLETS; ++i) {
 
 		// ----------------------------------------spaceship bullet
 		// if the bullet exist
@@ -403,7 +327,7 @@ void moveEnemies() {
 
 	auto deltaTime = GetFrameTime();
 	// move enemies
-	FOR(MAX_ENEMY) {
+	for (int i = 0; i < MAX_ENEMY; ++i) {
 
 		// if it exist
 		if (enemies[i].x == -40 || enemies[i].y == -40) {
@@ -443,7 +367,7 @@ void checkBulletsCollision() {
 			continue;
 		}
 
-		FOR(MAX_BULLETS) {
+		for (int i = 0; i < MAX_BULLETS; ++i) {
 			// if the bullet exist and if the enemy is still alive after being eventually hit
 			if (bullets[i].x == -1 || bullets[i].y == -1 || e_health[j] <= 0) {
 				continue;
@@ -470,7 +394,7 @@ void checkBulletsCollision() {
 	     runtime.spaceship_box.y + spaceship_height}  // linespace 2
 	};
 
-	FOR(MAX_BULLETS) {
+	for (int i = 0; i < MAX_BULLETS; ++i) {
 		if (e_bullets[i].x == -1) {
 			continue;
 		}
@@ -557,7 +481,7 @@ void checkEntitiesCollisions() {
  */
 void enemyAI() {
 	// enemy AI
-	FOR(MAX_ENEMY) {
+	for (int i = 0; i < MAX_ENEMY; ++i) {
 		// check if the enemy exist and i put i little bit of RNG
 		if (enemies[i].x == -40 || e_health[i] < 0) {
 			continue;
@@ -583,7 +507,7 @@ void enemyAI() {
 			                  movx,
 			                  movy};
 
-			addBullet(bullet, i);
+			addBullet(bullet, i, bullets, e_bullets);
 			e_coolDown[i] = (char)(default_stat.e_fireCoolDown);
 		}
 		e_coolDown[i]--;
@@ -620,12 +544,12 @@ void fireBullets() {
 
 	float counter = ((float)(runtime.spaceship_num_bullets) / 2.f - step);
 	for (int i = 0; i < runtime.spaceship_num_bullets; i++) {
-		addBullet((Vector4){
-		              runtime.spaceship_box.x + spaceship_width / 2,
-		              runtime.spaceship_box.y + spaceship_height / 3,
-		              counter,
-		              DEFAULT_BULLET_SPEED},
-		          -1);
+		Vector4 newBull = {
+		    runtime.spaceship_box.x + spaceship_width / 2,
+		    runtime.spaceship_box.y + spaceship_height / 3,
+		    counter,
+		    DEFAULT_BULLET_SPEED};
+		addBullet(newBull, -1, bullets, e_bullets);
 
 		counter -= 1;
 	}
@@ -713,99 +637,11 @@ Vector2 intersection(Vector4 line1, Vector4 line2) {
 }
 
 /**
- * Save the score and the name of the player in a json
- *
-void save() {
-
-    SetMouseCursor(MOUSE_CURSOR_IBEAM);
-
-    char name[MAX_LENGHT_NAME + 1];
-    memset(name, 0, sizeof(name));
-    int nameIndex = 0;
-
-    char character;
-    while (true) {
-        character = char(GetCharPressed());
-
-        std::string hiscore = "Your score is : " + std::to_string(runtime.score);
-
-        BeginDrawing();
-        ClearBackground(BLACK);
-
-        DrawText(hiscore.c_str(), 200, 400, 30, WHITE);
-        DrawText("Insert Your Name", 250, 440, 20, WHITE);
-        DrawText("Press Enter to confirm", 250, 470, 20, WHITE);
-        DrawText(name, 250, 500, 20, WHITE);
-
-        EndDrawing();
-
-        if ((character > 0) && (character >= 32) && (character <= 125) && (nameIndex < MAX_LENGHT_NAME)) {
-            name[nameIndex]     = character;
-            name[nameIndex + 1] = '\0';
-            nameIndex++;
-        }
-        if (IsKeyPressed(KEY_BACKSPACE)) {
-            nameIndex--;
-            if (nameIndex < 0) {
-                nameIndex = 0;
-            }
-            name[nameIndex] = '\0';
-        }
-
-        if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-            runtime.close = true;
-            return;
-        }
-
-        if (IsKeyPressed(KEY_ENTER)) {
-            break;
-        }
-    }
-
-    std::ifstream HiScores("./res/HiScores.json");
-
-    json j;
-
-    HiScores >> j;
-
-    if (j["hiscores"][name] <= runtime.score) {
-        j["hiscores"][name] = runtime.score;
-    }
-
-    std::ofstream oHiScores("./res/HiScores.json");
-
-    oHiScores << std::setfill('\t') << std::setw(1) << j << std::endl;
-}*/
-
-/**
- * fill the stars array with random stars in random positions at random speed
- */
-void fillStars() {
-	FOR(MAX_STAR) {
-		randomStar(i);
-	}
-}
-
-/**
- * Set the given star to a random pos, speed and type
- */
-void randomStar(int index) {
-
-	float x = (float)(GetRandomValue(0, screenWidth));
-	float y = (float)(GetRandomValue(0, screenHeight));
-
-	float speed = ((float)(GetRandomValue(0, 3)) + 1.f);
-	speed *= STAR_SPEED_MULT;
-
-	stars[index] = (Vector3){x, y, speed};
-}
-
-/**
  * Draw the right texture for each star
  */
 void renderStars() {
 
-	FOR(MAX_STAR) {
+	for (int i = 0; i < MAX_STAR; ++i) {
 
 		// this can be moved to the shader
 		int type = (int)(stars[i].x) % 3;
@@ -851,25 +687,17 @@ void moveStars() {
 
 	auto deltaTime = GetFrameTime();
 
-	FOR(MAX_STAR) {
+	for (int i = 0; i < MAX_STAR; ++i) {
 		stars[i].y += stars[i].z * STAR_SPEED_MULT * deltaTime;
 
 		if ((stars[i].y) - (float)(Star_ATL.height) > screenHeight) {
 
-			randomStar(i);
+			randomStar(i, stars);
 
 			// spawn the at the top of the screen
 			stars[i].y = (float)(-Star_ATL.height);
 		}
 	}
-}
-
-/**
- * Return the time in ms since the start of the window
- */
-long getCurrMs() {
-
-	return (long)(GetTime() * 1000);
 }
 
 /**

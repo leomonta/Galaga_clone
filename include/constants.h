@@ -32,8 +32,6 @@
 #define DefaultStar \
 	(Vector4) { -1, -1, -1, -1 }
 
-#define nullptr 0
-
 #define spaceship_width  30
 #define spaceship_height 30
 #define screenWidth      800

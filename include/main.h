@@ -47,12 +47,7 @@ const RuntimeVals default_stat = {
 
 RuntimeVals runtime;
 
-void    spawnEnemies();
-void    addEnemies(Vector2 coords);
-void    addBullet(Vector4 bullet, int n);
 void    renderBullets();
-void    resetArrays();
-void    resetStats();
 void    moveBullets();
 void    moveEnemies();
 void    checkBulletsCollision();
@@ -62,8 +57,6 @@ void    physics();
 void    fireBullets();
 void    pacmanEffect(Texture sprite);
 Vector2 intersection(Vector4 line1, Vector4 line2);
-void    fillStars();
-void    randomStar(int index);
 void    renderStars();
 void    moveStars();
 long    getCurrMs();

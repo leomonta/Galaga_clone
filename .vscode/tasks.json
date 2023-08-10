@@ -3,12 +3,13 @@
 	"tasks": [
 		{
 			"type": "shell",
-			"label": "C/C++: g++.exe build all modified files",
+			"label": "build all modified files",
 			"command": "cpp_builder.py",
+			"args": [ "-p", "analyzer" ],
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"problemMatcher": ["$gcc"],
+			"problemMatcher": [ "$gcc" ],
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -16,12 +17,27 @@
 		},
 		{
 			"type": "shell",
-			"label": "C/C++: g++.exe build all files",
-			"command": "cpp_builder.py -a",
+			"label": "build all files",
+			"command": "cpp_builder.py",
+			"args": [ "-p", "analyzer", "-a" ],
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
-			"problemMatcher": ["$gcc"],
+			"problemMatcher": [ "$gcc" ],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"type": "shell",
+			"label": "clean build",
+			"command": "cpp_builder.py",
+			"args": [ "-p", "clean", "-a" ],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [ "$gcc" ],
 			"group": {
 				"kind": "build",
 				"isDefault": true
@@ -30,11 +46,12 @@
 		{
 			"type": "process",
 			"label": "RenderDoc",
-			"command" : "qrenderdoc",
+			"command": "qrenderdoc",
 			"group": {
 				"kind": "test",
 				"isDefault": true
-			}
+			},
+			"dependsOn": "clean build"
 		}
 	]
 }
