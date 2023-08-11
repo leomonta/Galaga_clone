@@ -11,6 +11,7 @@
 #include "main.h"
 
 #include "constants.h"
+#include "loops.h"
 #include "notifications.h"
 #include "utils.h"
 
@@ -18,6 +19,52 @@
 #include <raylib.h>
 #include <stdint.h>
 #include <time.h> // for random numbers
+
+gameState runtime;
+
+// The fist two values represent the coordinates, the latter two the accelleration
+Vector4 bullets[MAX_BULLETS];
+Vector4 e_bullets[MAX_BULLETS];
+
+// The coordinates of all the enemies
+Vector2 enemies[MAX_ENEMY];
+
+// other enemies stats
+char e_coolDown[MAX_ENEMY];
+int  e_health[MAX_ENEMY];
+
+// x, y, z,
+// x, y, speed
+// the type is deducted from the last number of the x coord
+// type = x % 3
+Vector3 stars[MAX_STAR];
+
+int             fps = 60;
+Texture         spaceship_sprite;
+Texture         Enemyship_sprite;
+Texture         Upgrades[3];
+Texture         Star_ATL;
+RenderTexture2D frameBuffer;
+Shader          bloomShader;
+Font            Consolas;
+
+const gameState default_stat = {
+    200,
+    0,
+    {400, 800},
+    DefaultShipPos,
+    1,
+    6,
+    10,
+    1,
+    6,
+    10,
+    0,
+    0,
+    false,
+    false,
+    false
+};
 
 int main() {
 	// ------------------------------------------------------------------------------------- Initialization
@@ -55,17 +102,17 @@ int main() {
 
 		// Main game loop
 		if (!runtime.pause && runtime.spaceship_health > 0) { // Detect window close button or ESC key
-			gameLoop();
+			gameLoop(&runtime, enemies, e_health, &frameBuffer, &spaceship_sprite, &Enemyship_sprite, Upgrades, &bloomShader, &default_stat);
 		}
 
 		// death screnn loop
 		if (runtime.spaceship_health <= 0) {
-			deathLoop();
+			deathLoop(&runtime, bullets, e_bullets, e_coolDown, e_health, enemies, &default_stat);
 		}
 
 		// pause screen loop
 		if (runtime.pause) {
-			pauseLoop();
+			pauseLoop(&runtime);
 		}
 	}
 
@@ -82,169 +129,6 @@ int main() {
 
 	return 0;
 	//-------------------------------------------------------------------------------------- End de-Initialization
-}
-
-/**
- * print a couple messages just once
- */
-void pauseLoop() {
-
-	BeginDrawing();
-
-	// screen opacity
-	DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 128});
-
-	// pause message
-	DrawText("Game Paused", 200, 400, 30, WHITE);
-	DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
-	DrawText("Press Q to close", 250, 470, 20, WHITE);
-
-	EndDrawing();
-
-	while (true) {
-
-		// poll inputs and keep the frame time usable
-		BeginDrawing();
-		EndDrawing();
-
-		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-			runtime.close = true;
-			break;
-		}
-
-		// Unpause Button
-		if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
-			runtime.pause = false;
-			break;
-		}
-	}
-
-	// get rid of the lingering <Esc> / <P> pressed
-	PollInputEvents();
-}
-
-/**
- * take care of the entire game loop, drawing stuff
- */
-void gameLoop() {
-
-	if (WindowShouldClose()) {
-		runtime.close = true;
-		return;
-	}
-
-	// Pause Button
-	if (IsKeyPressed(KEY_P) || IsKeyPressed(KEY_ESCAPE)) {
-		runtime.pause = true;
-		return;
-	}
-
-	gameInputs();
-
-	// limit the speed to the maximum possible as base
-	runtime.spaceship_speed = runtime.spaceship_Maxspeed;
-
-	// more upgrade, more enemies
-	float spawn = (float)(GetRandomValue(0, 30000));
-	if (spawn < runtime.enemy_spawn_rate) {
-		spawnRandomEnemies(enemies, e_health);
-		runtime.enemy_spawn_rate = default_stat.enemy_spawn_rate;
-
-	} else {
-		// increase the probablity of spawning if enemy did not spawn
-		float inc = (float)(runtime.spaceship_num_bullets) * BULLET_SPAWN_WEIGHT;
-		inc += (float)(runtime.spaceship_Maxspeed - default_stat.spaceship_Maxspeed) * SPEED_SPAWN_WEIGHT;
-		inc += (float)(runtime.upgr_PacmanEffect) * PACMAN_SPAWN_WEIGHT;
-
-		runtime.enemy_spawn_rate += inc;
-	}
-
-	// manage objects movement and interactions
-	physics();
-
-	// check if the spaceship has died
-	if (runtime.spaceship_health <= 0) {
-		return;
-	}
-
-	// --------------------------------------------------------------------------------- Draw
-
-	// render to framebuffer
-	BeginTextureMode(frameBuffer);
-	{
-		// draw screen
-		ClearBackground(SCREEN_BG);
-
-		renderStars();
-
-		pacmanEffect(spaceship_sprite);
-
-		// draw objects
-		DrawTextureV(spaceship_sprite, (Vector2){runtime.spaceship_box.x, runtime.spaceship_box.y}, WHITE);
-		for (int i = 0; i < MAX_ENEMY; ++i) {
-
-			if (enemies[i].x != -40 && enemies[i].y != -40) {
-				DrawTextureV(Enemyship_sprite, (Vector2){enemies[i].x, enemies[i].y}, WHITE);
-			}
-		}
-
-		// draw the correct upgrade
-		DrawTexture(Upgrades[runtime.upgrade_type], (int)(runtime.upgrade_box.x), (int)(runtime.upgrade_box.y), WHITE);
-
-		renderBullets();
-	}
-	EndTextureMode();
-
-	BeginDrawing();
-	{
-		BeginShaderMode(bloomShader);
-		{
-			DrawTextureRec(frameBuffer.texture, (Rectangle){0.f, 0.f, (float)(frameBuffer.texture.width), (float)(-frameBuffer.texture.height)}, (Vector2){0.f, 0.f}, WHITE);
-		}
-		EndShaderMode();
-		// Draw spaceship stats on the screen
-		/*
-		std::string text = "Bullets: " + std::to_string(runtime.spaceship_num_bullets);
-		text += "\n Speed: " + std::to_string((int)(runtime.spaceship_Maxspeed));
-		text += "\n Health: " + std::to_string(runtime.spaceship_health);
-		text += "\n Score: " + std::to_string(runtime.score);
-		DrawTextEx(Consolas, text.c_str(), {10, 10}, 20, 1, {255, 255, 255, 150});
-		*/
-
-		DrawFPS(200, 10);
-
-		notif__renderNotifications();
-	}
-	EndDrawing();
-	//---------------------------------------------------------------------------------- End draw
-}
-
-/**
- * black screen and user input
- */
-void deathLoop() {
-
-	BeginDrawing();
-
-	ClearBackground(BLACK);
-	DrawText("Game Over", 200, 400, 30, WHITE);
-	DrawText("Press Q to exit", 250, 440, 20, WHITE);
-	DrawText("Press Enter to retry", 250, 470, 20, WHITE);
-
-	EndDrawing();
-
-	if (IsKeyPressed(KEY_ENTER)) {
-		resetArrays(bullets, e_bullets, e_coolDown, e_health, enemies);
-
-		runtime = default_stat;
-		return;
-	}
-
-	if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-		runtime.close = true;
-		// save();
-		return;
-	}
 }
 
 /**
@@ -773,6 +657,9 @@ bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 	return false;
 }
 
+/**
+ * Listens for inputs from keyboards
+ */
 void gameInputs() {
 
 	auto deltaTime = GetFrameTime();

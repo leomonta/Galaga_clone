@@ -1,6 +1,6 @@
 #pragma once
 
-#include "raylib.h"
+#include <raylib.h>
 
 /**
  * Quick shortcut to spawn a random enemy in the top of the map

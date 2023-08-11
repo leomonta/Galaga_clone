@@ -111,6 +111,9 @@
 		"notification.h": "c",
 		"stdbool.h": "c",
 		"main.h": "c",
-		"utils.h": "c"
+		"utils.h": "c",
+		"raylib.h": "c",
+		"time.h": "c",
+		"loops.h": "c"
 	},
 }
