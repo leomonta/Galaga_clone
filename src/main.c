@@ -132,39 +132,6 @@ int main() {
 }
 
 /**
- * Render all active bullets
- */
-void renderBullets() {
-
-	for (int i = 0; i < MAX_BULLETS; ++i) {
-
-		if (bullets[i].x != -1 && bullets[i].y != -1) {
-			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
-			Vector2 bstart = {
-			    bullets[i].x,
-			    bullets[i].y};
-			Vector2 bend = {
-			    bullets[i].x + bullets[i].z * 2,
-			    bullets[i].y + bullets[i].w * 2};
-
-			DrawLineEx(bstart, bend, 2.5, WHITE);
-		}
-		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
-			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
-
-			Vector2 bstart = {
-			    e_bullets[i].x,
-			    e_bullets[i].y};
-			Vector2 bend = {
-			    e_bullets[i].x + e_bullets[i].z * 2,
-			    e_bullets[i].y + e_bullets[i].w * 2};
-
-			DrawLineEx(bstart, bend, 2.5, YELLOW);
-		}
-	}
-}
-
-/**
  * Move, if they exist, spaceship bullets and enemy bullets
  */
 void moveBullets() {
@@ -440,57 +407,6 @@ void fireBullets() {
 }
 
 /**
- * Teleport the spaceship at the opposite side of the screen
- */
-void pacmanEffect(Texture sprite) {
-	if (runtime.upgr_PacmanEffect) {
-		if (runtime.spaceship_box.x < 0) {
-			if (runtime.spaceship_box.x + spaceship_width / 2 < 0) {
-				runtime.spaceship_box.x = runtime.spaceship_box.x + screenWidth;
-			}
-			DrawTexture(sprite, (int)(screenWidth + runtime.spaceship_box.x), (int)(runtime.spaceship_box.y), WHITE);
-		}
-
-		if (runtime.spaceship_box.x + spaceship_width > screenWidth) {
-			if (runtime.spaceship_box.x + spaceship_width / 2 > screenWidth) {
-				runtime.spaceship_box.x = runtime.spaceship_box.x - screenWidth;
-			}
-			DrawTexture(sprite, (int)(runtime.spaceship_box.x - screenWidth), (int)(runtime.spaceship_box.y), WHITE);
-		}
-
-		if (runtime.spaceship_box.y < 0) {
-			if (runtime.spaceship_box.y + spaceship_height / 2 < 0) {
-				runtime.spaceship_box.y = runtime.spaceship_box.y + screenHeight;
-			}
-			DrawTexture(sprite, (int)(runtime.spaceship_box.x), (int)(runtime.spaceship_box.y + screenHeight), WHITE);
-		}
-
-		if (runtime.spaceship_box.y + spaceship_height > screenHeight) {
-			if (runtime.spaceship_box.y + spaceship_height / 2 > screenHeight) {
-				runtime.spaceship_box.y = runtime.spaceship_box.y - screenHeight;
-			}
-			DrawTexture(sprite, (int)(runtime.spaceship_box.x), (int)(runtime.spaceship_box.y - screenHeight), WHITE);
-		}
-	} else {
-		if (runtime.spaceship_box.x < 0) {
-			runtime.spaceship_box.x = 0;
-		}
-
-		if (runtime.spaceship_box.x + spaceship_width > screenWidth) {
-			runtime.spaceship_box.x = screenWidth - spaceship_width;
-		}
-
-		if (runtime.spaceship_box.y < 0) {
-			runtime.spaceship_box.y = 0;
-		}
-
-		if (runtime.spaceship_box.y + spaceship_height > screenHeight) {
-			runtime.spaceship_box.y = screenHeight - spaceship_height;
-		}
-	}
-}
-
-/**
  * Return the point of intersection between two line defined by two points
  */
 Vector2 intersection(Vector4 line1, Vector4 line2) {
@@ -518,70 +434,6 @@ Vector2 intersection(Vector4 line1, Vector4 line2) {
 		res = (Vector2){-1, -1};
 	}
 	return res;
-}
-
-/**
- * Draw the right texture for each star
- */
-void renderStars() {
-
-	for (int i = 0; i < MAX_STAR; ++i) {
-
-		// this can be moved to the shader
-		int type = (int)(stars[i].x) % 3;
-
-		unsigned char alpha = (unsigned char)(stars[i].z / STAR_SPEED_MULT * 30.f);
-		Color         col   = {100, 100, 100, 100 + alpha};
-
-		switch (type) {
-		case 0:
-			col.g = 10;
-			col.b = 10; // RED
-			break;
-
-		case 1:
-			col.r = 128;
-			col.g = 128;
-			col.b = 10; // YELLOW
-			break;
-
-		case 2:
-			col.r = 10;
-			col.g = 10; // BLUE
-			break;
-		}
-
-		float width = (float)(Star_ATL.width) / 3.f;
-
-		Vector2 pos = {stars[i].x, stars[i].y};
-
-		Rectangle tile = {width * (float)(type),
-		                  0.f,
-		                  width,
-		                  (float)(Star_ATL.height)};
-
-		DrawTextureRec(Star_ATL, tile, pos, col);
-	}
-}
-
-/**
- * move the stars by their own speed
- */
-void moveStars() {
-
-	auto deltaTime = GetFrameTime();
-
-	for (int i = 0; i < MAX_STAR; ++i) {
-		stars[i].y += stars[i].z * STAR_SPEED_MULT * deltaTime;
-
-		if ((stars[i].y) - (float)(Star_ATL.height) > screenHeight) {
-
-			randomStar(i, stars);
-
-			// spawn the at the top of the screen
-			stars[i].y = (float)(-Star_ATL.height);
-		}
-	}
 }
 
 /**

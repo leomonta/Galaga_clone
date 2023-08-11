@@ -4,7 +4,7 @@
 
 #include <raylib.h>
 
-void gameLoop(gameState *runtime, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader * bloomShader, const gameState *default_stat) {
+void gameLoop(gameState *runtime, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader *bloomShader, const gameState *default_stat) {
 
 	if (WindowShouldClose()) {
 		runtime->close = true;
@@ -56,6 +56,21 @@ void gameLoop(gameState *runtime, Vector2 *enemies, int *enemiesHealth, RenderTe
 		renderStars();
 
 		pacmanEffect(*spaceship_sprite);
+		if (runtime->spaceship_box.x < 0) {
+			runtime->spaceship_box.x = 0;
+		}
+
+		if (runtime->spaceship_box.x + spaceship_width > screenWidth) {
+			runtime->spaceship_box.x = screenWidth - spaceship_width;
+		}
+
+		if (runtime->spaceship_box.y < 0) {
+			runtime->spaceship_box.y = 0;
+		}
+
+		if (runtime->spaceship_box.y + spaceship_height > screenHeight) {
+			runtime->spaceship_box.y = screenHeight - spaceship_height;
+		}
 
 		// draw objects
 		DrawTextureV(*spaceship_sprite, (Vector2){runtime->spaceship_box.x, runtime->spaceship_box.y}, WHITE);
@@ -138,7 +153,7 @@ void pauseLoop(gameState *runtime) {
 /**
  * black screen and user input
  */
-void deathLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies, const gameState* default_stat) {
+void deathLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies, const gameState *default_stat) {
 
 	BeginDrawing();
 
