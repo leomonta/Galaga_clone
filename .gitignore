@@ -1,6 +1,7 @@
 *.bin
 *.exe
 obj/*
-files_hash.txt
+files_hash
 bin/res/HiScores.json
 screenshot*
+compile_commands.json

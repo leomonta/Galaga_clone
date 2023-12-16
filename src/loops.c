@@ -1,10 +1,12 @@
 #include "loops.h"
 
 #include "notifications.h"
+#include "graphics.h"
+#include "utils.h"
 
 #include <raylib.h>
 
-void gameLoop(gameState *runtime, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader *bloomShader, const gameState *default_stat) {
+void gameLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader *bloomShader, const gameState *default_stat) {
 
 	if (WindowShouldClose()) {
 		runtime->close = true;
@@ -55,7 +57,7 @@ void gameLoop(gameState *runtime, Vector2 *enemies, int *enemiesHealth, RenderTe
 
 		renderStars();
 
-		pacmanEffect(*spaceship_sprite);
+		pacmanEffect(&runtime->spaceship_box);
 		if (runtime->spaceship_box.x < 0) {
 			runtime->spaceship_box.x = 0;
 		}
@@ -84,7 +86,7 @@ void gameLoop(gameState *runtime, Vector2 *enemies, int *enemiesHealth, RenderTe
 		// draw the correct upgrade
 		DrawTexture(Upgrades[runtime->upgrade_type], (int)(runtime->upgrade_box.x), (int)(runtime->upgrade_box.y), WHITE);
 
-		renderBullets();
+		renderBullets(bullets, enemiesBullets);
 	}
 	EndTextureMode();
 

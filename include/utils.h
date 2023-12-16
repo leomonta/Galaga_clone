@@ -24,16 +24,6 @@ void addBullet(const Vector4 bullet, const int n, Vector4 *bullets, Vector4 *ene
 void resetArrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies);
 
 /**
- * fill the stars array with random stars in random positions at random speed
- */
-void fillStars(Vector3 *stars);
-
-/**
- * Set the given star to a random pos, speed and type
- */
-void randomStar(const int index, Vector3 *stars);
-
-/**
  * Return the time in ms since the start of the window
  */
 long getCurrMs();

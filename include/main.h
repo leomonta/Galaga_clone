@@ -27,7 +27,6 @@ typedef struct gameState {
 	bool pause; // should pause the game
 } gameState;
 
-void    renderBullets();
 void    moveBullets();
 void    moveEnemies();
 void    checkBulletsCollision();
@@ -35,7 +34,6 @@ void    checkEntitiesCollisions();
 void    enemyAI();
 void    physics();
 void    fireBullets();
-void    pacmanEffect(Texture sprite);
 Vector2 intersection(Vector4 line1, Vector4 line2);
 void    renderStars();
 void    moveStars();

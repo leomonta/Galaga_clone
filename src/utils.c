@@ -56,23 +56,6 @@ void resetArrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCoo
 	}
 }
 
-void fillStars(Vector3 *stars) {
-	for (int i = 0; i < MAX_STAR; ++i) {
-		randomStar(i, stars);
-	}
-}
-
-void randomStar(const int index, Vector3 *stars) {
-
-	float x = (float)(GetRandomValue(0, screenWidth));
-	float y = (float)(GetRandomValue(0, screenHeight));
-
-	float speed = ((float)(GetRandomValue(0, 3)) + 1.f);
-	speed *= STAR_SPEED_MULT;
-
-	stars[index] = (Vector3){x, y, speed};
-}
-
 long getCurrMs() {
 
 	return (long)(GetTime() * 1000);

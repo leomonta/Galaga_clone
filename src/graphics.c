@@ -1,7 +1,6 @@
 #include "graphics.h"
 
 #include "constants.h"
-#include "utils.h"
 
 #include <raylib.h>
 
@@ -13,8 +12,32 @@ struct GraphicResources {
 } Res;
 
 /**
- * Draw the right texture for each star
+ * Set the given star to a random pos, speed and type
  */
+void randomStar(const int index) {
+
+	float x = (float)(GetRandomValue(0, screenWidth));
+	float y = (float)(GetRandomValue(0, screenHeight));
+
+	float speed = ((float)(GetRandomValue(0, 3)) + 1.f);
+	speed *= STAR_SPEED_MULT;
+
+	Res.stars[index] = (Vector3){x, y, speed};
+}
+
+void fillStars() {
+	for (int i = 0; i < MAX_STAR; ++i) {
+		randomStar(i);
+	}
+}
+
+void setupGraphics() {
+
+	Res.starAtlas           = LoadTexture("./res/img/stars/star_atlas.png");
+	Res.spacehipSprite      = LoadTexture("./res/img/ships/spaceship.png");
+	Res.enemySpacehipSprite = LoadTexture("./res/img/ships/enemyship.png");
+}
+
 void renderStars() {
 
 	for (int i = 0; i < MAX_STAR; ++i) {
@@ -68,7 +91,7 @@ void moveStars() {
 
 		if ((Res.stars[i].y) - (float)(Res.starAtlas.height) > screenHeight) {
 
-			randomStar(i, Res.stars);
+			randomStar(i);
 
 			// spawn the at the top of the screen
 			Res.stars[i].y = (float)(-Res.starAtlas.height);
@@ -79,7 +102,7 @@ void moveStars() {
 /**
  * Teleport the spaceship at the opposite side of the screen
  */
-pacmanEffect(Vector2 *pos) {
+void pacmanEffect(Vector2 *pos) {
 
 	Vector2 spaceshipPos = *pos;
 	if (spaceshipPos.x < 0) {

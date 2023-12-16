@@ -14,11 +14,10 @@
 #include "loops.h"
 #include "notifications.h"
 #include "utils.h"
+#include "graphics.h"
 
 #include <math.h> // for sqrt
 #include <raylib.h>
-#include <stdint.h>
-#include <time.h> // for random numbers
 
 gameState runtime;
 
@@ -73,12 +72,9 @@ int main() {
 	InitWindow(screenWidth, screenHeight, "Galaga clone by Leonardo");
 
 	// TODO: check if the textures are actually loaded, they return id <= 0 if so
-	spaceship_sprite         = LoadTexture("./res/img/ships/spaceship.png");
-	Enemyship_sprite         = LoadTexture("./res/img/ships/enemyship.png");
 	Upgrades[UPGRADE_BULLET] = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
 	Upgrades[UPGRADE_SPEED]  = LoadTexture("./res/img/upgrades/upgrade_speed.png");
 	Upgrades[UPGRADE_PACMAN] = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
-	Star_ATL                 = LoadTexture("./res/img/stars/star_atlas.png");
 	Consolas                 = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
 	frameBuffer              = LoadRenderTexture(screenWidth, screenHeight);
 	bloomShader              = LoadShader(nullptr, "./res/shaders/bloom.frag");
@@ -86,7 +82,7 @@ int main() {
 	HideCursor();
 	// Loading textures
 
-	fillStars(stars);
+	fillStars();
 
 	resetArrays(bullets, e_bullets, e_coolDown, e_health, enemies);
 
@@ -102,7 +98,7 @@ int main() {
 
 		// Main game loop
 		if (!runtime.pause && runtime.spaceship_health > 0) { // Detect window close button or ESC key
-			gameLoop(&runtime, enemies, e_health, &frameBuffer, &spaceship_sprite, &Enemyship_sprite, Upgrades, &bloomShader, &default_stat);
+			gameLoop(&runtime, bullets, e_bullets, enemies, e_health, &frameBuffer, &spaceship_sprite, &Enemyship_sprite, Upgrades, &bloomShader, &default_stat);
 		}
 
 		// death screnn loop
