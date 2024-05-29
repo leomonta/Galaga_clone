@@ -25,14 +25,14 @@
 
 #define SCREEN_BG \
 	(Color) { 0, 0, 40, 255 }
-#define DefaultBullet \
+#define default_bullet \
 	(Vector4) { -1, -1, 0, 0 }
-#define DefaultShipPos \
+#define default_ship_pos \
 	(Vector2) { -40, -40}
-#define DefaultStar \
+#define sefault_star \
 	(Vector4) { -1, -1, -1, -1 }
 
 #define spaceship_width  30
 #define spaceship_height 30
-#define screenWidth      800
-#define screenHeight     1000
+#define screen_width      800
+#define screen_height     1000

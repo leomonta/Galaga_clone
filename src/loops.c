@@ -1,12 +1,13 @@
 #include "loops.h"
 
-#include "notifications.h"
+#include "constants.h"
 #include "graphics.h"
+#include "notifications.h"
 #include "utils.h"
 
 #include <raylib.h>
 
-void gameLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader *bloomShader, const gameState *default_stat) {
+void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader *bloomShader, const gameState *default_stat) {
 
 	if (WindowShouldClose()) {
 		runtime->close = true;
@@ -19,22 +20,22 @@ void gameLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vec
 		return;
 	}
 
-	gameInputs();
+	game_inputs();
 
 	// limit the speed to the maximum possible as base
-	runtime->spaceship_speed = runtime->spaceship_Maxspeed;
+	runtime->spaceship_speed = runtime->spaceship_maxspeed;
 
 	// more upgrade, more enemies
 	float spawn = (float)(GetRandomValue(0, 30000));
 	if (spawn < runtime->enemy_spawn_rate) {
-		spawnRandomEnemies(enemies, enemiesHealth);
+		spawn_random_enemies(enemies, enemiesHealth);
 		runtime->enemy_spawn_rate = default_stat->enemy_spawn_rate;
 
 	} else {
 		// increase the probablity of spawning if enemy did not spawn
 		float inc = (float)(runtime->spaceship_num_bullets) * BULLET_SPAWN_WEIGHT;
-		inc += (float)(runtime->spaceship_Maxspeed - default_stat->spaceship_Maxspeed) * SPEED_SPAWN_WEIGHT;
-		inc += (float)(runtime->upgr_PacmanEffect) * PACMAN_SPAWN_WEIGHT;
+		inc += (float)(runtime->spaceship_maxspeed - default_stat->spaceship_maxspeed) * SPEED_SPAWN_WEIGHT;
+		inc += (float)(runtime->upgr_pacman_effect) * PACMAN_SPAWN_WEIGHT;
 
 		runtime->enemy_spawn_rate += inc;
 	}
@@ -55,23 +56,23 @@ void gameLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vec
 		// draw screen
 		ClearBackground(SCREEN_BG);
 
-		renderStars();
+		draw_stars();
 
-		pacmanEffect(&runtime->spaceship_box);
+		draw_pacman(&runtime->spaceship_box);
 		if (runtime->spaceship_box.x < 0) {
 			runtime->spaceship_box.x = 0;
 		}
 
-		if (runtime->spaceship_box.x + spaceship_width > screenWidth) {
-			runtime->spaceship_box.x = screenWidth - spaceship_width;
+		if (runtime->spaceship_box.x + spaceship_width > screen_width) {
+			runtime->spaceship_box.x = screen_width - spaceship_width;
 		}
 
 		if (runtime->spaceship_box.y < 0) {
 			runtime->spaceship_box.y = 0;
 		}
 
-		if (runtime->spaceship_box.y + spaceship_height > screenHeight) {
-			runtime->spaceship_box.y = screenHeight - spaceship_height;
+		if (runtime->spaceship_box.y + spaceship_height > screen_height) {
+			runtime->spaceship_box.y = screen_height - spaceship_height;
 		}
 
 		// draw objects
@@ -86,7 +87,7 @@ void gameLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vec
 		// draw the correct upgrade
 		DrawTexture(Upgrades[runtime->upgrade_type], (int)(runtime->upgrade_box.x), (int)(runtime->upgrade_box.y), WHITE);
 
-		renderBullets(bullets, enemiesBullets);
+		draw_bullets(bullets, enemiesBullets);
 	}
 	EndTextureMode();
 
@@ -108,18 +109,18 @@ void gameLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vec
 
 		DrawFPS(200, 10);
 
-		notif__renderNotifications();
+		notif__render_notifications();
 	}
 	EndDrawing();
 	//---------------------------------------------------------------------------------- End draw
 }
 
-void pauseLoop(gameState *runtime) {
+void pause_loop(gameState *runtime) {
 
 	BeginDrawing();
 
 	// screen opacity
-	DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 128});
+	DrawRectangle(0, 0, screen_width, screen_height, (Color){0, 0, 0, 128});
 
 	// pause message
 	DrawText("Game Paused", 200, 400, 30, WHITE);
@@ -155,7 +156,7 @@ void pauseLoop(gameState *runtime) {
 /**
  * black screen and user input
  */
-void deathLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies, const gameState *default_stat) {
+void death_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies, const gameState *default_stat) {
 
 	BeginDrawing();
 
@@ -167,7 +168,7 @@ void deathLoop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, ch
 	EndDrawing();
 
 	if (IsKeyPressed(KEY_ENTER)) {
-		resetArrays(bullets, enemiesBullets, enemiesFireCooldown, enemiesHealth, enemies);
+		reset_arrays(bullets, enemiesBullets, enemiesFireCooldown, enemiesHealth, enemies);
 
 		*runtime = *default_stat;
 		return;

@@ -16,8 +16,8 @@ struct GraphicResources {
  */
 void randomStar(const int index) {
 
-	float x = (float)(GetRandomValue(0, screenWidth));
-	float y = (float)(GetRandomValue(0, screenHeight));
+	float x = (float)(GetRandomValue(0, screen_width));
+	float y = (float)(GetRandomValue(0, screen_height));
 
 	float speed = ((float)(GetRandomValue(0, 3)) + 1.f);
 	speed *= STAR_SPEED_MULT;
@@ -25,20 +25,22 @@ void randomStar(const int index) {
 	Res.stars[index] = (Vector3){x, y, speed};
 }
 
-void fillStars() {
+void scatter_stars() {
 	for (int i = 0; i < MAX_STAR; ++i) {
 		randomStar(i);
 	}
 }
 
-void setupGraphics() {
+bool initialize_graphics() {
 
 	Res.starAtlas           = LoadTexture("./res/img/stars/star_atlas.png");
 	Res.spacehipSprite      = LoadTexture("./res/img/ships/spaceship.png");
 	Res.enemySpacehipSprite = LoadTexture("./res/img/ships/enemyship.png");
+
+	return true;
 }
 
-void renderStars() {
+void draw_stars() {
 
 	for (int i = 0; i < MAX_STAR; ++i) {
 
@@ -82,14 +84,14 @@ void renderStars() {
 /**
  * move the stars by their own speed
  */
-void moveStars() {
+void move_stars() {
 
 	auto deltaTime = GetFrameTime();
 
 	for (int i = 0; i < MAX_STAR; ++i) {
 		Res.stars[i].y += Res.stars[i].z * STAR_SPEED_MULT * deltaTime;
 
-		if ((Res.stars[i].y) - (float)(Res.starAtlas.height) > screenHeight) {
+		if ((Res.stars[i].y) - (float)(Res.starAtlas.height) > screen_height) {
 
 			randomStar(i);
 
@@ -102,49 +104,48 @@ void moveStars() {
 /**
  * Teleport the spaceship at the opposite side of the screen
  */
-void pacmanEffect(Vector2 *pos) {
+void draw_pacman(const Vector2 *pos) {
 
 	Vector2 spaceshipPos = *pos;
 	if (spaceshipPos.x < 0) {
-		if (spaceshipPos.x + spaceship_width / 2 < 0) {
-			spaceshipPos.x = spaceshipPos.x + screenWidth;
-		}
-		DrawTexture(Res.spacehipSprite, (int)(screenWidth + spaceshipPos.x), (int)(spaceshipPos.y), WHITE);
+		// if (spaceshipPos.x + spaceship_width / 2 < 0) {
+		// spaceshipPos.x = spaceshipPos.x + screen_width;
+		//}
+		DrawTexture(Res.spacehipSprite, (int)(screen_width + spaceshipPos.x), (int)(spaceshipPos.y), WHITE);
 	}
 
-	if (spaceshipPos.x + spaceship_width > screenWidth) {
-		if (spaceshipPos.x + spaceship_width / 2 > screenWidth) {
-			spaceshipPos.x = spaceshipPos.x - screenWidth;
-		}
-		DrawTexture(Res.spacehipSprite, (int)(spaceshipPos.x - screenWidth), (int)(spaceshipPos.y), WHITE);
+	if (spaceshipPos.x + spaceship_width > screen_width) {
+		// if (spaceshipPos.x + spaceship_width / 2 > screen_width) {
+		// spaceshipPos.x = spaceshipPos.x - screen_width;
+		//}
+		DrawTexture(Res.spacehipSprite, (int)(spaceshipPos.x - screen_width), (int)(spaceshipPos.y), WHITE);
 	}
 
 	if (spaceshipPos.y < 0) {
-		if (spaceshipPos.y + spaceship_height / 2 < 0) {
-			spaceshipPos.y = spaceshipPos.y + screenHeight;
-		}
-		DrawTexture(Res.spacehipSprite, (int)(spaceshipPos.x), (int)(spaceshipPos.y + screenHeight), WHITE);
+		// if (spaceshipPos.y + spaceship_height / 2 < 0) {
+		// spaceshipPos.y = spaceshipPos.y + screen_height;
+		//}
+		DrawTexture(Res.spacehipSprite, (int)(spaceshipPos.x), (int)(spaceshipPos.y + screen_height), WHITE);
 	}
 
-	if (spaceshipPos.y + spaceship_height > screenHeight) {
-		if (spaceshipPos.y + spaceship_height / 2 > screenHeight) {
-			spaceshipPos.y = spaceshipPos.y - screenHeight;
-		}
-		DrawTexture(Res.spacehipSprite, (int)(spaceshipPos.x), (int)(spaceshipPos.y - screenHeight), WHITE);
+	if (spaceshipPos.y + spaceship_height > screen_height) {
+		// if (spaceshipPos.y + spaceship_height / 2 > screen_height) {
+		// spaceshipPos.y = spaceshipPos.y - screen_height;
+		//}
+		DrawTexture(Res.spacehipSprite, (int)(spaceshipPos.x), (int)(spaceshipPos.y - screen_height), WHITE);
 	}
 
-	*pos = spaceshipPos;
+	//*pos = spaceshipPos;
 }
 
 /**
  * Render all active bullets
  */
-void renderBullets(Vector4 *bullets, Vector4 *enemiesBullets) {
+void draw_bullets(const Vector4 *bullets, const Vector4 *enemiesBullets) {
 
 	for (int i = 0; i < MAX_BULLETS; ++i) {
 
-		if (bullets[i].x != -1 && bullets[i].y != -1) {
-			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
+		if (bullets[i].x <= -1) {
 			Vector2 bstart = {
 			    bullets[i].x,
 			    bullets[i].y};
@@ -152,10 +153,10 @@ void renderBullets(Vector4 *bullets, Vector4 *enemiesBullets) {
 			    bullets[i].x + bullets[i].z * 2,
 			    bullets[i].y + bullets[i].w * 2};
 
+			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
 			DrawLineEx(bstart, bend, 2.5, WHITE);
 		}
-		if (enemiesBullets[i].x != -1 && enemiesBullets[i].y != -1) {
-			// I want specifick tickness, therefore the DrawLineEx(startpos, endpos, thickness, color)
+		if (enemiesBullets[i].x <= -1) {
 
 			Vector2 bstart = {
 			    enemiesBullets[i].x,

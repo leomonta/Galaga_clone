@@ -2,14 +2,14 @@
 
 #include "constants.h"
 
-void spawnRandomEnemies(Vector2 *enemies, int *enemiesHealth) {
-	addEnemies((Vector2){
-	               (float)(GetRandomValue(0, screenWidth - spaceship_height)),
+void spawn_random_enemies(Vector2 *enemies, int *enemiesHealth) {
+	add_enemies((Vector2){
+	               (float)(GetRandomValue(0, screen_width - spaceship_height)),
 	               (float)(GetRandomValue(0, 40))},
 	           enemies, enemiesHealth);
 }
 
-void addEnemies(const Vector2 coords, Vector2 *enemies, int *enemiesHealth) {
+void add_enemies(const Vector2 coords, Vector2 *enemies, int *enemiesHealth) {
 
 	for (int i = 0; i < MAX_ENEMY; ++i) {
 
@@ -21,7 +21,7 @@ void addEnemies(const Vector2 coords, Vector2 *enemies, int *enemiesHealth) {
 	}
 }
 
-void addBullet(const Vector4 bullet, const int n, Vector4 *bullets, Vector4 *enemiesBullets) {
+void add_bullet(const Vector4 bullet, const int n, Vector4 *bullets, Vector4 *enemiesBullets) {
 
 	if (n == -1) {
 		for (int i = 0; i < MAX_BULLETS; ++i) {
@@ -40,23 +40,23 @@ void addBullet(const Vector4 bullet, const int n, Vector4 *bullets, Vector4 *ene
 	}
 }
 
-void resetArrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies) {
+void reset_arrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies) {
 
 	for (int i = 0; i < MAX_BULLETS; ++i) {
 
-		bullets[i]        = DefaultBullet;
-		enemiesBullets[i] = DefaultBullet;
+		bullets[i]        = default_bullet;
+		enemiesBullets[i] = default_bullet;
 	}
 
 	for (int i = 0; i < MAX_ENEMY; ++i) {
 
 		enemiesHealth[i]       = 0;
 		enemiesFireCooldown[i] = -1;
-		enemies[i]             = DefaultShipPos;
+		enemies[i]             = default_ship_pos;
 	}
 }
 
-long getCurrMs() {
+long get_curr_ms() {
 
 	return (long)(GetTime() * 1000);
 }

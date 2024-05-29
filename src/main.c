@@ -29,7 +29,7 @@ Vector4 e_bullets[MAX_BULLETS];
 Vector2 enemies[MAX_ENEMY];
 
 // other enemies stats
-char e_coolDown[MAX_ENEMY];
+char e_cooldown[MAX_ENEMY];
 int  e_health[MAX_ENEMY];
 
 // x, y, z,
@@ -40,18 +40,18 @@ Vector3 stars[MAX_STAR];
 
 int             fps = 60;
 Texture         spaceship_sprite;
-Texture         Enemyship_sprite;
-Texture         Upgrades[3];
-Texture         Star_ATL;
+Texture         enemyship_sprite;
+Texture         upgrades[3];
+Texture         star_ATL;
 RenderTexture2D frameBuffer;
 Shader          bloomShader;
-Font            Consolas;
+Font            consolas;
 
 const gameState default_stat = {
     200,
     0,
     {400, 800},
-    DefaultShipPos,
+    default_ship_pos,
     1,
     6,
     10,
@@ -69,23 +69,23 @@ int main() {
 	// ------------------------------------------------------------------------------------- Initialization
 
 	// Initial preparations
-	InitWindow(screenWidth, screenHeight, "Galaga clone by Leonardo");
+	InitWindow(screen_width, screen_height, "Galaga clone by Leonardo");
 
 	// TODO: check if the textures are actually loaded, they return id <= 0 if so
-	Upgrades[UPGRADE_BULLET] = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
-	Upgrades[UPGRADE_SPEED]  = LoadTexture("./res/img/upgrades/upgrade_speed.png");
-	Upgrades[UPGRADE_PACMAN] = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
-	Consolas                 = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
-	frameBuffer              = LoadRenderTexture(screenWidth, screenHeight);
+	upgrades[UPGRADE_BULLET] = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
+	upgrades[UPGRADE_SPEED]  = LoadTexture("./res/img/upgrades/upgrade_speed.png");
+	upgrades[UPGRADE_PACMAN] = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
+	consolas                 = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
+	frameBuffer              = LoadRenderTexture(screen_width, screen_height);
 	bloomShader              = LoadShader(nullptr, "./res/shaders/bloom.frag");
 	spaceship_sprite         = LoadTexture("./res/img/ships/spaceship.png");
-	Enemyship_sprite         = LoadTexture("./res/img/ships/enemyship.png");
+	enemyship_sprite         = LoadTexture("./res/img/ships/enemyship.png");
 
 	HideCursor();
 
-	fillStars();
+	scatter_stars();
 
-	resetArrays(bullets, e_bullets, e_coolDown, e_health, enemies);
+	reset_arrays(bullets, e_bullets, e_cooldown, e_health, enemies);
 
 	runtime = default_stat;
 	SetTargetFPS(fps); // Set our game to run at given frames-per-second
@@ -99,28 +99,28 @@ int main() {
 
 		// Main game loop
 		if (!runtime.pause && runtime.spaceship_health > 0) { // Detect window close button or ESC key
-			gameLoop(&runtime, bullets, e_bullets, enemies, e_health, &frameBuffer, &spaceship_sprite, &Enemyship_sprite, Upgrades, &bloomShader, &default_stat);
+			game_loop(&runtime, bullets, e_bullets, enemies, e_health, &frameBuffer, &spaceship_sprite, &enemyship_sprite, upgrades, &bloomShader, &default_stat);
 		}
 
 		// death screnn loop
 		if (runtime.spaceship_health <= 0) {
-			deathLoop(&runtime, bullets, e_bullets, e_coolDown, e_health, enemies, &default_stat);
+			death_loop(&runtime, bullets, e_bullets, e_cooldown, e_health, enemies, &default_stat);
 		}
 
 		// pause screen loop
 		if (runtime.pause) {
-			pauseLoop(&runtime);
+			pause_loop(&runtime);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------- De-Initialization
 	UnloadTexture(spaceship_sprite);
-	UnloadTexture(Enemyship_sprite);
-	UnloadTexture(Upgrades[UPGRADE_BULLET]);
-	UnloadTexture(Upgrades[UPGRADE_SPEED]);
-	UnloadTexture(Upgrades[UPGRADE_PACMAN]);
-	UnloadTexture(Star_ATL);
-	UnloadFont(Consolas);
+	UnloadTexture(enemyship_sprite);
+	UnloadTexture(upgrades[UPGRADE_BULLET]);
+	UnloadTexture(upgrades[UPGRADE_SPEED]);
+	UnloadTexture(upgrades[UPGRADE_PACMAN]);
+	UnloadTexture(star_ATL);
+	UnloadFont(consolas);
 
 	CloseWindow(); // Close window and OpenGL context
 
@@ -131,9 +131,9 @@ int main() {
 /**
  * Move, if they exist, spaceship bullets and enemy bullets
  */
-void moveBullets() {
+void move_bullets() {
 
-	auto deltaTime = GetFrameTime();
+	auto delta_time = GetFrameTime();
 
 	// move bullets
 	for (int i = 0; i < MAX_BULLETS; ++i) {
@@ -143,12 +143,12 @@ void moveBullets() {
 		if (bullets[i].x != -1 && bullets[i].y != -1) {
 
 			// advance the bullet
-			bullets[i].x += bullets[i].z * deltaTime * BULLET_SPEED_MULT;
-			bullets[i].y += bullets[i].w * deltaTime * BULLET_SPEED_MULT;
+			bullets[i].x += bullets[i].z * delta_time * BULLET_SPEED_MULT;
+			bullets[i].y += bullets[i].w * delta_time * BULLET_SPEED_MULT;
 
 			// if it goes offscreen eliminate it
-			if (bullets[i].x < 0 || bullets[i].x > screenWidth || bullets[i].y < 0 || bullets[i].y > screenHeight) {
-				bullets[i] = DefaultBullet;
+			if (bullets[i].x < 0 || bullets[i].x > screen_width || bullets[i].y < 0 || bullets[i].y > screen_height) {
+				bullets[i] = default_bullet;
 			}
 		}
 
@@ -157,12 +157,12 @@ void moveBullets() {
 		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
 
 			// advance the bullet
-			e_bullets[i].x += e_bullets[i].z * deltaTime * BULLET_SPEED_MULT;
-			e_bullets[i].y += e_bullets[i].w * deltaTime * BULLET_SPEED_MULT;
+			e_bullets[i].x += e_bullets[i].z * delta_time * BULLET_SPEED_MULT;
+			e_bullets[i].y += e_bullets[i].w * delta_time * BULLET_SPEED_MULT;
 
 			// if it goes offscreen eliminate it
-			if (e_bullets[i].x < 0 || e_bullets[i].x > screenWidth || e_bullets[i].y < 0 || e_bullets[i].y > screenHeight) {
-				e_bullets[i] = DefaultBullet;
+			if (e_bullets[i].x < 0 || e_bullets[i].x > screen_width || e_bullets[i].y < 0 || e_bullets[i].y > screen_height) {
+				e_bullets[i] = default_bullet;
 			}
 		}
 	}
@@ -171,7 +171,7 @@ void moveBullets() {
 /**
  * move the enemies down the screen
  */
-void moveEnemies() {
+void move_enemies() {
 
 	auto deltaTime = GetFrameTime();
 	// move enemies
@@ -186,13 +186,13 @@ void moveEnemies() {
 
 		// and remove it if it goes offscreen or is dead
 		if (e_health[i] <= 0) {
-			notif__scheduleNotification("+ 10", (Vector2){enemies[i].x, enemies[i].y}, (unsigned char)(2 * fps));
-			enemies[i] = DefaultShipPos;
+			notif__schedule_notification("+ 10", (Vector2){enemies[i].x, enemies[i].y}, (unsigned char)(2 * fps));
+			enemies[i] = default_ship_pos;
 			runtime.score += 10;
 		}
 
-		if (enemies[i].y > screenHeight) {
-			enemies[i] = DefaultShipPos;
+		if (enemies[i].y > screen_height) {
+			enemies[i] = default_ship_pos;
 			runtime.score -= 50;
 		}
 	}
@@ -201,7 +201,7 @@ void moveEnemies() {
 /**
  * Check collision between bullets, enemies and spaceship. the decrease health/spawn upgrades
  */
-void checkBulletsCollision() {
+void check_bullets_collision() {
 
 	// -------------------------------------------------------------------------------------------- enemy ship collision
 
@@ -221,7 +221,7 @@ void checkBulletsCollision() {
 				continue;
 			}
 
-			if (bulletEnemyCollision(i, j)) {
+			if (bullet_enemy_collision(i, j)) {
 				return; // only one bullet per frame
 			}
 		}
@@ -257,7 +257,7 @@ void checkBulletsCollision() {
 
 			if (intersect_point.x != -1) {
 
-				e_bullets[i] = DefaultBullet; // delete bullet
+				e_bullets[i] = default_bullet; // delete bullet
 				runtime.spaceship_health--;   // inflict damage
 				break;                        // next bullet
 			}
@@ -272,7 +272,7 @@ void checkBulletsCollision() {
 /**
  * Check collisions between spaceship and upgrades, and spaceships with enemies
  */
-void checkEntitiesCollisions() {
+void check_entities_collisions() {
 
 	Rectangle uBox = {runtime.upgrade_box.x,
 	                  runtime.upgrade_box.y,
@@ -293,22 +293,22 @@ void checkEntitiesCollisions() {
 		switch (runtime.upgrade_type) {
 
 		case UPGRADE_PACMAN:
-			notif__scheduleNotification("+ 500", pos, (unsigned char)(2 * fps));
+			notif__schedule_notification("+ 500", pos, (unsigned char)(2 * fps));
 			runtime.score += 500;
-			runtime.upgr_PacmanEffect = true;
+			runtime.upgr_pacman_effect = true;
 			break;
 
 		case UPGRADE_SPEED:
-			notif__scheduleNotification("+ 200", pos, (unsigned char)(2 * fps));
+			notif__schedule_notification("+ 200", pos, (unsigned char)(2 * fps));
 			runtime.score += 200;
-			runtime.spaceship_Maxspeed++;
-			if (runtime.spaceship_Maxspeed >= MAX_SPEED) {
-				runtime.spaceship_Maxspeed = 15;
+			runtime.spaceship_maxspeed++;
+			if (runtime.spaceship_maxspeed >= MAX_SPEED) {
+				runtime.spaceship_maxspeed = 15;
 			}
 			break;
 
 		case UPGRADE_BULLET:
-			notif__scheduleNotification("+ 200", pos, (unsigned char)(2 * fps));
+			notif__schedule_notification("+ 200", pos, (unsigned char)(2 * fps));
 			runtime.score += 200;
 			runtime.spaceship_num_bullets++;
 			if (runtime.spaceship_num_bullets > MAX_BULLET) {
@@ -320,14 +320,14 @@ void checkEntitiesCollisions() {
 			break;
 		}
 
-		runtime.upgrade_box = DefaultShipPos; // delete upgrade
+		runtime.upgrade_box = default_ship_pos; // delete upgrade
 	}
 }
 
 /**
  * every enemy shoot at the spaceship randomly,
  */
-void enemyAI() {
+void enemy_AI() {
 	// enemy AI
 	for (int i = 0; i < MAX_ENEMY; ++i) {
 		// check if the enemy exist and i put i little bit of RNG
@@ -335,7 +335,7 @@ void enemyAI() {
 			continue;
 		}
 
-		if (e_coolDown[i] <= 0 && (GetRandomValue(0, 8)) == 1) {
+		if (e_cooldown[i] <= 0 && (GetRandomValue(0, 8)) == 1) {
 
 			// distance from spaceship
 			float distx = (enemies[i].x + 15) - (runtime.spaceship_box.x + 15);
@@ -355,10 +355,10 @@ void enemyAI() {
 			                  movx,
 			                  movy};
 
-			addBullet(bullet, i, bullets, e_bullets);
-			e_coolDown[i] = (char)(default_stat.e_fireCoolDown);
+			add_bullet(bullet, i, bullets, e_bullets);
+			e_cooldown[i] = (char)(default_stat.e_fire_cool_down);
 		}
-		e_coolDown[i]--;
+		e_cooldown[i]--;
 	}
 }
 
@@ -368,25 +368,25 @@ void enemyAI() {
 void physics() {
 
 	// -------------------------------------------------------------------------------------------------------------- Move Entities
-	moveBullets();
+	move_bullets();
 
-	moveEnemies();
+	move_enemies();
 
-	moveStars();
+	move_stars();
 
 	// -------------------------------------------------------------------------------------------------------------- Collisions
-	checkBulletsCollision();
+	check_bullets_collision();
 
-	checkEntitiesCollisions();
+	check_entities_collisions();
 
 	// -------------------------------------------------------------------------------------------------------------- Interactions
-	enemyAI();
+	enemy_AI();
 }
 
 /**
  * Fire the amount, given by the var spaceship_num_bullets, of bullets with the correct angle
  */
-void fireBullets() {
+void fire_bullets() {
 
 	float step = 0.5;
 
@@ -397,7 +397,7 @@ void fireBullets() {
 		    runtime.spaceship_box.y + spaceship_height / 3,
 		    counter,
 		    DEFAULT_BULLET_SPEED};
-		addBullet(newBull, -1, bullets, e_bullets);
+		add_bullet(newBull, -1, bullets, e_bullets);
 
 		counter -= 1;
 	}
@@ -459,7 +459,7 @@ void pickRandomUpgrade(int enemyIndex) {
 /**
  * Shorthand to check for hitting an enemy
  */
-bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
+bool bullet_enemy_collision(int bulletIndex, int enemyIndex) {
 	// check collision for both diagonals
 	for (int k = 0; k < 2; k++) {
 
@@ -495,7 +495,7 @@ bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 			continue;
 		}
 
-		bullets[bulletIndex] = DefaultBullet; // delete bullet
+		bullets[bulletIndex] = default_bullet; // delete bullet
 		--e_health[enemyIndex];               // inflict damage
 
 		pickRandomUpgrade(enemyIndex);
@@ -509,7 +509,7 @@ bool bulletEnemyCollision(int bulletIndex, int enemyIndex) {
 /**
  * Listens for inputs from keyboards
  */
-void gameInputs() {
+void game_inputs() {
 
 	auto deltaTime = GetFrameTime();
 
@@ -518,10 +518,10 @@ void gameInputs() {
 	if (IsKeyDown(KEY_SPACE)) {
 		runtime.spaceship_speed /= 2;
 
-		auto now = getCurrMs();
-		if (now - runtime.lastShot >= runtime.fireCoolDown) {
-			fireBullets();
-			runtime.lastShot = now;
+		auto now = get_curr_ms();
+		if (now - runtime.last_shot >= runtime.fire_cool_down) {
+			fire_bullets();
+			runtime.last_shot = now;
 		}
 	}
 

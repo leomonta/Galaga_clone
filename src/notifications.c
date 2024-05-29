@@ -23,7 +23,7 @@ void notif__init() {
 /**
  * Insert the notification int the queue
  */
-void notif__scheduleNotification(const char *s, Vector2 pos, unsigned char cdown) {
+void notif__schedule_notification(const char *s, Vector2 pos, unsigned char cdown) {
 	nfRes.texts[nfRes.index]      = s;
 	nfRes.countDowns[nfRes.index] = cdown;
 	nfRes.positions[nfRes.index]  = pos;
@@ -51,7 +51,7 @@ void notif__tick() {
 /**
  * Draw the actual notifications
  */
-void notif__renderNotifications() {
+void notif__render_notifications() {
 
 	for (int i = 0; i < MAX_NOTIFICATIONS; ++i) {
 
