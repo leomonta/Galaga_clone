@@ -11,10 +11,10 @@
 #include "main.h"
 
 #include "constants.h"
+#include "graphics.h"
 #include "loops.h"
 #include "notifications.h"
 #include "utils.h"
-#include "graphics.h"
 
 #include <math.h> // for sqrt
 #include <raylib.h>
@@ -78,9 +78,10 @@ int main() {
 	Consolas                 = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
 	frameBuffer              = LoadRenderTexture(screenWidth, screenHeight);
 	bloomShader              = LoadShader(nullptr, "./res/shaders/bloom.frag");
+	spaceship_sprite         = LoadTexture("./res/img/ships/spaceship.png");
+	Enemyship_sprite         = LoadTexture("./res/img/ships/enemyship.png");
 
 	HideCursor();
-	// Loading textures
 
 	fillStars();
 
