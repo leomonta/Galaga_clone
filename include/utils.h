@@ -27,3 +27,10 @@ void reset_arrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCo
  * Return the time in ms since the start of the window
  */
 long get_curr_ms();
+
+/**
+ * makes sure that the next time 'get_frametime' get called it resturns 1/fps, this is to make sure the game does not cout the pause screen as running time
+ */
+void reset_frametime();
+
+float get_frametime();

@@ -7,7 +7,7 @@
 
 #include <raylib.h>
 
-void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vector2 *enemies, int *enemiesHealth, RenderTexture2D *frameBuffer, Texture *spaceship_sprite, Texture *Enemyship_sprite, Texture *Upgrades, Shader *bloomShader, const gameState *default_stat) {
+void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Vector2 *enemies, int *enemiesHealth, const gameState *default_stat) {
 
 	if (WindowShouldClose()) {
 		runtime->close = true;
@@ -51,7 +51,8 @@ void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Ve
 	// --------------------------------------------------------------------------------- Draw
 
 	// render to framebuffer
-	BeginTextureMode(*frameBuffer);
+	auto framebuffer = get_framebuffer();
+	BeginTextureMode(*framebuffer);
 	{
 		// draw screen
 		ClearBackground(SCREEN_BG);
@@ -76,16 +77,10 @@ void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Ve
 		}
 
 		// draw objects
-		DrawTextureV(*spaceship_sprite, (Vector2){runtime->spaceship_box.x, runtime->spaceship_box.y}, WHITE);
-		for (int i = 0; i < MAX_ENEMY; ++i) {
-
-			if (enemies[i].x != -40 && enemies[i].y != -40) {
-				DrawTextureV(*Enemyship_sprite, (Vector2){enemies[i].x, enemies[i].y}, WHITE);
-			}
-		}
+		draw_ships(&runtime->spaceship_box, enemies, NEITHER);
 
 		// draw the correct upgrade
-		DrawTexture(Upgrades[runtime->upgrade_type], (int)(runtime->upgrade_box.x), (int)(runtime->upgrade_box.y), WHITE);
+		draw_upgrade(runtime->upgrade_type, runtime->upgrade_box);
 
 		draw_bullets(bullets, enemiesBullets);
 	}
@@ -93,9 +88,9 @@ void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Ve
 
 	BeginDrawing();
 	{
-		BeginShaderMode(*bloomShader);
+		BeginShaderMode(*get_shader());
 		{
-			DrawTextureRec(frameBuffer->texture, (Rectangle){0.f, 0.f, (float)(frameBuffer->texture.width), (float)(-frameBuffer->texture.height)}, (Vector2){0.f, 0.f}, WHITE);
+			DrawTextureRec(framebuffer->texture, (Rectangle){0.f, 0.f, (float)(framebuffer->texture.width), (float)(-framebuffer->texture.height)}, (Vector2){0.f, 0.f}, WHITE);
 		}
 		EndShaderMode();
 		// Draw spaceship stats on the screen
@@ -131,12 +126,6 @@ void pause_loop(gameState *runtime) {
 
 	while (true) {
 
-		// poll inputs and keep the frame time usable
-		// without this the moment the pause is unpaused the frame time would be equal to all of the time that the game was paused
-		// leading to very big movements
-		BeginDrawing();
-		EndDrawing();
-
 		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
 			runtime->close = true;
 			break;
@@ -147,10 +136,18 @@ void pause_loop(gameState *runtime) {
 			runtime->pause = false;
 			break;
 		}
+
+		PollInputEvents();
 	}
+
+	//reset_frametime();
 
 	// get rid of the lingering <Esc> / <P> pressed
 	PollInputEvents();
+
+	// allow correct recalculation of the frame time
+	EndDrawing();
+	EndDrawing();
 }
 
 /**

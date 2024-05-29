@@ -39,13 +39,6 @@ int  e_health[MAX_ENEMY];
 Vector3 stars[MAX_STAR];
 
 int             fps = 60;
-Texture         spaceship_sprite;
-Texture         enemyship_sprite;
-Texture         upgrades[3];
-Texture         star_ATL;
-RenderTexture2D frameBuffer;
-Shader          bloomShader;
-Font            consolas;
 
 const gameState default_stat = {
     200,
@@ -71,15 +64,7 @@ int main() {
 	// Initial preparations
 	InitWindow(screen_width, screen_height, "Galaga clone by Leonardo");
 
-	// TODO: check if the textures are actually loaded, they return id <= 0 if so
-	upgrades[UPGRADE_BULLET] = LoadTexture("./res/img/upgrades/upgrade_bullet.png");
-	upgrades[UPGRADE_SPEED]  = LoadTexture("./res/img/upgrades/upgrade_speed.png");
-	upgrades[UPGRADE_PACMAN] = LoadTexture("./res/img/upgrades/upgrade_pacman.png");
-	consolas                 = LoadFont("/usr/share/fonts/noto/NotoSansMono-Bold.ttf");
-	frameBuffer              = LoadRenderTexture(screen_width, screen_height);
-	bloomShader              = LoadShader(nullptr, "./res/shaders/bloom.frag");
-	spaceship_sprite         = LoadTexture("./res/img/ships/spaceship.png");
-	enemyship_sprite         = LoadTexture("./res/img/ships/enemyship.png");
+	initialize_graphics();
 
 	HideCursor();
 
@@ -99,7 +84,7 @@ int main() {
 
 		// Main game loop
 		if (!runtime.pause && runtime.spaceship_health > 0) { // Detect window close button or ESC key
-			game_loop(&runtime, bullets, e_bullets, enemies, e_health, &frameBuffer, &spaceship_sprite, &enemyship_sprite, upgrades, &bloomShader, &default_stat);
+			game_loop(&runtime, bullets, e_bullets, enemies, e_health, &default_stat);
 		}
 
 		// death screnn loop
@@ -114,13 +99,6 @@ int main() {
 	}
 
 	//-------------------------------------------------------------------------------------- De-Initialization
-	UnloadTexture(spaceship_sprite);
-	UnloadTexture(enemyship_sprite);
-	UnloadTexture(upgrades[UPGRADE_BULLET]);
-	UnloadTexture(upgrades[UPGRADE_SPEED]);
-	UnloadTexture(upgrades[UPGRADE_PACMAN]);
-	UnloadTexture(star_ATL);
-	UnloadFont(consolas);
 
 	CloseWindow(); // Close window and OpenGL context
 
@@ -133,7 +111,7 @@ int main() {
  */
 void move_bullets() {
 
-	auto delta_time = GetFrameTime();
+	auto delta_time = get_frametime();
 
 	// move bullets
 	for (int i = 0; i < MAX_BULLETS; ++i) {
@@ -173,7 +151,7 @@ void move_bullets() {
  */
 void move_enemies() {
 
-	auto deltaTime = GetFrameTime();
+	auto deltaTime = get_frametime();
 	// move enemies
 	for (int i = 0; i < MAX_ENEMY; ++i) {
 
@@ -511,7 +489,7 @@ bool bullet_enemy_collision(int bulletIndex, int enemyIndex) {
  */
 void game_inputs() {
 
-	auto deltaTime = GetFrameTime();
+	auto deltaTime = get_frametime();
 
 	// --------------------------------------------------------------------------------- Check Keyboard
 	// fire bullets when spacebar pressed

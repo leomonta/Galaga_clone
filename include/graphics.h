@@ -9,19 +9,25 @@ typedef enum : char {
 	BOTH
 } hitboxmask;
 
+typedef enum : char {
+	SPEED,
+	BULLETS,
+	PACMAN
+} upgradeType;
+
 /**
  * Loads the textures and the files needed for the game
  *
  * @return false if anything fails, true otherwise
  */
-bool initialize_graphics();
+void initialize_graphics();
 
 /**
  * Unloads everything loaded by the init function
  *
  * @return false if anything fails, true otherwise
  */
-bool terminate_graphics();
+void terminate_graphics();
 
 /**
  * fill the stars array with random stars in random positions at random speed
@@ -61,3 +67,25 @@ void draw_bullets(const Vector4 *bullets, const Vector4 *enemiesbullets);
  * @param hitboxes wheather or not to draw hitboxes fot the spaceships
  */
 void draw_ships(const Vector2 *mainship, const Vector2 *enemyships, const hitboxmask hitboxes);
+
+/**
+ * draw the selected upgrade at the given position
+ *
+ * @param upgrade_type which upgrade to draw
+ * @param upgrade_pos where to draw the upgrade
+ */
+void draw_upgrade(const upgradeType upgrade_type, const Vector2 upgrade_pos);
+
+/**
+ * return the internal framebuffer
+ *
+ * @return the internal framebuffer
+ */
+RenderTexture* get_framebuffer();
+
+/**
+ * returns the internal bloom shader
+ *
+ * @return the internal bloom shader
+ */
+Shader* get_shader();

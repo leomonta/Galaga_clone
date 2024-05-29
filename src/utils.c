@@ -2,11 +2,15 @@
 
 #include "constants.h"
 
+#include <raylib.h>
+
+static bool skip_frametime = false;
+
 void spawn_random_enemies(Vector2 *enemies, int *enemiesHealth) {
 	add_enemies((Vector2){
-	               (float)(GetRandomValue(0, screen_width - spaceship_height)),
-	               (float)(GetRandomValue(0, 40))},
-	           enemies, enemiesHealth);
+	                (float)(GetRandomValue(0, screen_width - spaceship_height)),
+	                (float)(GetRandomValue(0, 40))},
+	            enemies, enemiesHealth);
 }
 
 void add_enemies(const Vector2 coords, Vector2 *enemies, int *enemiesHealth) {
@@ -59,4 +63,17 @@ void reset_arrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCo
 long get_curr_ms() {
 
 	return (long)(GetTime() * 1000);
+}
+
+void reset_frametime() {
+	skip_frametime = true;
+}
+
+float get_frametime() {
+	if (skip_frametime) {
+		skip_frametime = false;
+		GetFrameTime();
+		return 0;
+	}
+	return GetFrameTime();
 }
