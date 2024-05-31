@@ -12,11 +12,6 @@ void init_runtime_info();
 void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets,  Vector2 *enemies, int *enemiesHealth, const gameState *default_stat);
 
 /**
- * Run the pause screen loop as a function
+ * Move, if they exist, spaceship bullets and enemy bullets
  */
-void pause_loop(gameState *runtime);
-
-/**
- * Run the death screen loop as a function
- */
-void death_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies, const gameState *default_stat);
+void move_bullets();

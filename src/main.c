@@ -11,9 +11,11 @@
 #include "main.h"
 
 #include "constants.h"
+#include "death_loop.h"
 #include "graphics.h"
-#include "loops.h"
+#include "main_loop.h"
 #include "notifications.h"
+#include "pause_loop.h"
 #include "utils.h"
 
 #include <math.h> // for sqrt
@@ -38,7 +40,7 @@ int  e_health[MAX_ENEMY];
 // type = x % 3
 Vector3 stars[MAX_STAR];
 
-int             fps = 60;
+int fps = 60;
 
 const gameState default_stat = {
     200,
@@ -89,12 +91,19 @@ int main() {
 
 		// death screnn loop
 		if (runtime.spaceship_health <= 0) {
-			death_loop(&runtime, bullets, e_bullets, e_cooldown, e_health, enemies, &default_stat);
+			death_loop(&runtime.close);
+
+			if (runtime.close) {
+
+				reset_arrays(bullets, e_bullets, e_cooldown, e_health, enemies);
+
+				runtime = default_stat;
+			}
 		}
 
 		// pause screen loop
 		if (runtime.pause) {
-			pause_loop(&runtime);
+			pause_loop(&runtime.close);
 		}
 	}
 
@@ -104,46 +113,6 @@ int main() {
 
 	return 0;
 	//-------------------------------------------------------------------------------------- End de-Initialization
-}
-
-/**
- * Move, if they exist, spaceship bullets and enemy bullets
- */
-void move_bullets() {
-
-	auto delta_time = get_frametime();
-
-	// move bullets
-	for (int i = 0; i < MAX_BULLETS; ++i) {
-
-		// ----------------------------------------spaceship bullet
-		// if the bullet exist
-		if (bullets[i].x != -1 && bullets[i].y != -1) {
-
-			// advance the bullet
-			bullets[i].x += bullets[i].z * delta_time * BULLET_SPEED_MULT;
-			bullets[i].y += bullets[i].w * delta_time * BULLET_SPEED_MULT;
-
-			// if it goes offscreen eliminate it
-			if (bullets[i].x < 0 || bullets[i].x > screen_width || bullets[i].y < 0 || bullets[i].y > screen_height) {
-				bullets[i] = default_bullet;
-			}
-		}
-
-		// ----------------------------------------enemy bullet
-		// if the bullet exist
-		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
-
-			// advance the bullet
-			e_bullets[i].x += e_bullets[i].z * delta_time * BULLET_SPEED_MULT;
-			e_bullets[i].y += e_bullets[i].w * delta_time * BULLET_SPEED_MULT;
-
-			// if it goes offscreen eliminate it
-			if (e_bullets[i].x < 0 || e_bullets[i].x > screen_width || e_bullets[i].y < 0 || e_bullets[i].y > screen_height) {
-				e_bullets[i] = default_bullet;
-			}
-		}
-	}
 }
 
 /**
@@ -236,8 +205,8 @@ void check_bullets_collision() {
 			if (intersect_point.x != -1) {
 
 				e_bullets[i] = default_bullet; // delete bullet
-				runtime.spaceship_health--;   // inflict damage
-				break;                        // next bullet
+				runtime.spaceship_health--;    // inflict damage
+				break;                         // next bullet
 			}
 		}
 
@@ -474,7 +443,7 @@ bool bullet_enemy_collision(int bulletIndex, int enemyIndex) {
 		}
 
 		bullets[bulletIndex] = default_bullet; // delete bullet
-		--e_health[enemyIndex];               // inflict damage
+		--e_health[enemyIndex];                // inflict damage
 
 		pickRandomUpgrade(enemyIndex);
 
@@ -491,8 +460,8 @@ void game_inputs() {
 
 	auto deltaTime = get_frametime();
 
-	// --------------------------------------------------------------------------------- Check Keyboard
 	// fire bullets when spacebar pressed
+	// --------------------------------------------------------------------------------- Check Keyboard
 	if (IsKeyDown(KEY_SPACE)) {
 		runtime.spaceship_speed /= 2;
 

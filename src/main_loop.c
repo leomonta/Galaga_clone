@@ -110,70 +110,42 @@ void game_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, Ve
 	//---------------------------------------------------------------------------------- End draw
 }
 
-void pause_loop(gameState *runtime) {
-
-	BeginDrawing();
-
-	// screen opacity
-	DrawRectangle(0, 0, screen_width, screen_height, (Color){0, 0, 0, 128});
-
-	// pause message
-	DrawText("Game Paused", 200, 400, 30, WHITE);
-	DrawText("Press Esc or P to unpause", 250, 440, 20, WHITE);
-	DrawText("Press Q to close", 250, 470, 20, WHITE);
-
-	EndDrawing();
-
-	while (true) {
-
-		if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-			runtime->close = true;
-			break;
-		}
-
-		// Unpause Button
-		if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P)) {
-			runtime->pause = false;
-			break;
-		}
-
-		PollInputEvents();
-	}
-
-	//reset_frametime();
-
-	// get rid of the lingering <Esc> / <P> pressed
-	PollInputEvents();
-
-	// allow correct recalculation of the frame time
-	EndDrawing();
-	EndDrawing();
-}
-
 /**
- * black screen and user input
+ * Move, if they exist, spaceship bullets and enemy bullets
  */
-void death_loop(gameState *runtime, Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies, const gameState *default_stat) {
+void move_bullets() {
 
-	BeginDrawing();
+	auto delta_time = get_frametime();
 
-	ClearBackground(BLACK);
-	DrawText("Game Over", 200, 400, 30, WHITE);
-	DrawText("Press Q to exit", 250, 440, 20, WHITE);
-	DrawText("Press Enter to retry", 250, 470, 20, WHITE);
+	// move bullets
+	for (int i = 0; i < MAX_BULLETS; ++i) {
 
-	EndDrawing();
+		// ----------------------------------------spaceship bullet
+		// if the bullet exist
+		if (bullets[i].x != -1 && bullets[i].y != -1) {
 
-	if (IsKeyPressed(KEY_ENTER)) {
-		reset_arrays(bullets, enemiesBullets, enemiesFireCooldown, enemiesHealth, enemies);
+			// advance the bullet
+			bullets[i].x += bullets[i].z * delta_time * BULLET_SPEED_MULT;
+			bullets[i].y += bullets[i].w * delta_time * BULLET_SPEED_MULT;
 
-		*runtime = *default_stat;
-		return;
-	}
+			// if it goes offscreen eliminate it
+			if (bullets[i].x < 0 || bullets[i].x > screen_width || bullets[i].y < 0 || bullets[i].y > screen_height) {
+				bullets[i] = default_bullet;
+			}
+		}
 
-	if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
-		runtime->close = true;
-		// save();
-		return;
+		// ----------------------------------------enemy bullet
+		// if the bullet exist
+		if (e_bullets[i].x != -1 && e_bullets[i].y != -1) {
+
+			// advance the bullet
+			e_bullets[i].x += e_bullets[i].z * delta_time * BULLET_SPEED_MULT;
+			e_bullets[i].y += e_bullets[i].w * delta_time * BULLET_SPEED_MULT;
+
+			// if it goes offscreen eliminate it
+			if (e_bullets[i].x < 0 || e_bullets[i].x > screen_width || e_bullets[i].y < 0 || e_bullets[i].y > screen_height) {
+				e_bullets[i] = default_bullet;
+			}
+		}
 	}
 }

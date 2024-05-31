@@ -27,7 +27,6 @@ typedef struct game_state {
 	bool pause; // should pause the game
 } gameState;
 
-void    move_bullets();
 void    move_enemies();
 void    check_bullets_collision();
 void    check_entities_collisions();

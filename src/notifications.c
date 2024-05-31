@@ -65,6 +65,6 @@ void notif__render_notifications() {
 
 		int posX = (int)(nfRes.positions[i].x);
 		int posY = (int)(nfRes.positions[i].y);
-		DrawText(nfRes.texts[i], posX, posY, 7, col);
+		DrawText(nfRes.texts[i], posX, posY, 12, col);
 	}
 }
