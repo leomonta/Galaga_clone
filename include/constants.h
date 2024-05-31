@@ -4,8 +4,8 @@
 #define UPGRADE_SPEED  1
 #define UPGRADE_BULLET 2
 
-#define MAX_SPEED  16
-#define MAX_BULLET 8
+#define MAX_SPEED_UPGRADE  16
+#define MAX_BULLET_UPGRADE 8
 
 #define MAX_BULLETS       1000
 #define MAX_NOTIFICATIONS 10
@@ -23,6 +23,10 @@
 #define BULLET_SPEED_MULT    20.f
 #define DEFAULT_BULLET_SPEED -12.f
 
+#define MAIN_FIRE_COOLDOWN 200
+#define ENEMY_FIRE_COOLDOWN 50
+#define ENEMY_SPAWN_RATE 1
+
 #define SCREEN_BG \
 	(Color) { 0, 0, 40, 255 }
 #define default_bullet \
@@ -36,3 +40,5 @@
 #define spaceship_height 30
 #define screen_width      800
 #define screen_height     1000
+
+#define FPS 60

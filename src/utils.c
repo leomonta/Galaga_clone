@@ -6,20 +6,20 @@
 
 static bool skip_frametime = false;
 
-void spawn_random_enemies(Vector2 *enemies, int *enemiesHealth) {
+void spawn_random_enemies(Vector2 *enemies, unsigned int *health) {
 	add_enemies((Vector2){
 	                (float)(GetRandomValue(0, screen_width - spaceship_height)),
 	                (float)(GetRandomValue(0, 40))},
-	            enemies, enemiesHealth);
+	            enemies, health);
 }
 
-void add_enemies(const Vector2 coords, Vector2 *enemies, int *enemiesHealth) {
+void add_enemies(const Vector2 coords, Vector2 *enemies, unsigned int *health) {
 
 	for (int i = 0; i < MAX_ENEMY; ++i) {
 
 		if (enemies[i].x == -40 && enemies[i].y == -40) {
-			enemies[i]       = coords;
-			enemiesHealth[i] = 5;
+			enemies[i] = coords;
+			health[i]  = 5;
 			return;
 		}
 	}
@@ -44,7 +44,7 @@ void add_bullet(const Vector4 bullet, const int n, Vector4 *bullets, Vector4 *en
 	}
 }
 
-void reset_arrays(Vector4 *bullets, Vector4 *enemiesBullets, char *enemiesFireCooldown, int *enemiesHealth, Vector2 *enemies) {
+void reset_arrays(Vector4 *bullets, Vector4 *enemiesBullets, unsigned char *enemiesFireCooldown, unsigned int *enemiesHealth, Vector2 *enemies) {
 
 	for (int i = 0; i < MAX_BULLETS; ++i) {
 

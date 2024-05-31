@@ -1,5 +1,7 @@
 #include "death_loop.h"
 
+#include "game_loop.h"
+
 #include <raylib.h>
 
 void death_loop(bool *game_closed) {
@@ -14,12 +16,12 @@ void death_loop(bool *game_closed) {
 	EndDrawing();
 
 	if (IsKeyPressed(KEY_ENTER)) {
+		reset_game();
 		return;
 	}
 
-	if (WindowShouldClose() || IsKeyPressed(KEY_Q)) {
+	if (IsKeyPressed(KEY_Q)) {
 		*game_closed = true;
 		return;
 	}
 }
-
